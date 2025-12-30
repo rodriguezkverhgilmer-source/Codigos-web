@@ -1,0 +1,259 @@
+{% comment %}
+  Variant picker con miniaturas de imagen (Dawn 15.4.0, 1 sola opción: Color)
+{% endcomment %}
+{%- unless product.has_only_default_variant -%}
+  <div
+    id="variant-swatches-{{ section.id }}"
+    class="variant-swatches"
+    data-section-id="{{ section.id }}"
+    data-product-url="{{ product.url }}"
+    data-product-id="{{ product.id }}"
+  >
+    <style>
+      .variant-image-swatches{display:flex;flex-wrap:wrap;gap:.5rem;list-style:none;margin:0;padding:0}
+      .variant-image-swatches li{margin:0;padding:0}
+      .visw__label{display:inline-block;cursor:pointer}
+      .visw__input{position:absolute;opacity:0;pointer-events:none}
+      .visw__box{display:block;border:2px solid transparent;border-radius:.6rem;transition:border-color .12s}
+      .visw__img{display:block;width:72px;height:72px;object-fit:cover;border-radius:.5rem}
+      .visw__fallback{display:inline-block;min-width:72px;text-align:center;padding:20px 8px;border-radius:.5rem}
+      .visw__input:checked + .visw__label .visw__box{border-color:#F78063}
+      .visw__input:focus-visible + .visw__label .visw__box{outline:2px solid #F78063;outline-offset:2px}
+      @media (min-width:768px){.visw__img{width:80px;height:80px}}
+
+      /* más espacio entre "Color:" y las miniaturas (compacto) */
+      #variant-swatches-{{ section.id }} fieldset.product-form__input--swatch > legend.form__label{
+        margin-bottom: 2px !important;
+        display: block;
+      }
+      #variant-swatches-{{ section.id }} ul.variant-image-swatches{
+        margin-top: 4px !important;
+      }
+
+      /* 🔧 Aplastar hueco de apps de opciones: tpo_option-set-wrapper */
+      #MainProduct-{{ section.id }} .tpo_option-set-wrapper{
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        min-height: 0 !important;
+        height: auto !important;
+      }
+      #MainProduct-{{ section.id }} .tpo_option-set-wrapper:empty{ display: none !important; }
+      #MainProduct-{{ section.id }} .tpo_option-set-wrapper > *:first-child{ margin-top:0 !important; }
+      #MainProduct-{{ section.id }} .tpo_option-set-wrapper > *:last-child{ margin-bottom:0 !important; }
+      #MainProduct-{{ section.id }} .tpo_option-set-wrapper + .product-form__buttons{ margin-top: 0 !important; }
+
+      /* 🛠️ Pequeño fix de centrado en mobile para que no quede “pegado” a la izquierda */
+      #Slider-Gallery-{{ section.id }}.slider--mobile{ scroll-padding-left: 16px; }
+      #Slider-Gallery-{{ section.id }} .product__media-item{ scroll-snap-align: center; }
+    </style>
+
+    {%- for option in product.options_with_values -%}
+      {%- liquid
+        assign lname = option.name | downcase
+        assign is_color = false
+        if lname contains 'color' or lname contains 'colour' or lname contains 'colorway'
+          assign is_color = true
+        endif
+      -%}
+
+      {%- if is_color -%}
+        <fieldset class="js product-form__input product-form__input--swatch">
+          <legend class="form__label">
+            {{ option.name }}:
+            <span data-selected-value>{{ option.selected_value }}</span>
+          </legend>
+
+          <ul class="variant-image-swatches" role="list">
+            {%- assign option_index = forloop.index0 -%}
+            {%- for value in option.values -%}
+              {%- assign variant_with_image = nil -%}
+              {%- for v in product.variants -%}
+                {%- if v.options[option_index] == value and v.image -%}
+                  {%- assign variant_with_image = v -%}
+                  {%- break -%}
+                {%- endif -%}
+              {%- endfor -%}
+              {%- assign input_id = section.id | append: '-' | append: option.position | append: '-' | append: forloop.index0 -%}
+              <li>
+                <input
+                  type="radio"
+                  class="visw__input"
+                  id="{{ input_id }}"
+                  name="options[{{ option.name | escape }}]"
+                  value="{{ value | escape }}"
+                  form="{{ product_form_id }}"
+                  data-option-input
+                  {% if option.selected_value == value %}checked{% endif %}
+                >
+                <label class="visw__label" for="{{ input_id }}">
+                  <span class="visw__box">
+                    {%- if variant_with_image -%}
+                      {{ variant_with_image.image
+                        | image_url: width: 200
+                        | image_tag:
+                          alt: value,
+                          loading: 'lazy',
+                          sizes: '(min-width: 768px) 80px, 72px',
+                          class: 'visw__img' }}
+                    {%- else -%}
+                      <span class="visw__fallback">{{ value }}</span>
+                    {%- endif -%}
+                  </span>
+                </label>
+              </li>
+            {%- endfor -%}
+          </ul>
+        </fieldset>
+      {%- else -%}
+        <fieldset class="js product-form__input product-form__input--pill">
+          <legend class="form__label">{{ option.name }}</legend>
+          {% render 'product-variant-options',
+            product: product,
+            option: option,
+            block: block,
+            picker_type: 'button'
+          %}
+        </fieldset>
+      {%- endif -%}
+    {%- endfor -%}
+
+    <script type="application/json" data-variants>
+      {{ product.variants | json }}
+    </script>
+  </div>
+
+  <script>
+  (() => {
+    const root = document.getElementById('variant-swatches-{{ section.id }}');
+    if(!root) return;
+
+    const productUrl = root.dataset.productUrl;
+    const variants = (() => { try { return JSON.parse(root.querySelector('script[data-variants]').textContent); } catch(e){ return []; } })();
+
+    const findVariantByColor = (val) => variants.find(v => (v.options && v.options[0] === val));
+
+    const updateHiddenId = (variantId) => {
+      const forms = [
+        ...document.querySelectorAll('#{{ 'product-form-' | append: section.id }}'),
+        ...document.querySelectorAll('product-form form[action*="/cart/add"]')
+      ];
+      forms.forEach((form) => {
+        if (!form) return;
+        let idInput = form.querySelector('input[name="id"]');
+        if(!idInput){
+          idInput = document.createElement('input');
+          idInput.type = 'hidden';
+          idInput.name = 'id';
+          form.appendChild(idInput);
+        }
+        idInput.value = variantId;
+        idInput.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    };
+
+    const setURL = (variantId) => {
+      const url = new URL(productUrl, window.location.origin);
+      url.searchParams.set('variant', variantId);
+      window.history.replaceState({}, '', url.toString());
+    };
+
+    // ✅ Activar el media correcto usando el mecanismo nativo del tema (click en thumbnail).
+    const activateMedia = (mediaId) => {
+      if(!mediaId) return;
+
+      // 1) Si hay thumbnails, click al correspondiente (esto sincroniza todo).
+      const thumb = document.querySelector('#GalleryThumbnails-{{ section.id }} [data-target="{{ section.id }}-' + mediaId + '"] button.thumbnail');
+      if (thumb) {
+        thumb.click();
+        return;
+      }
+
+      // 2) Fallback sin thumbnails (mobile oculto): mover el slide y activar clase.
+      const gallery = document.querySelector('#Slider-Gallery-{{ section.id }}');
+      const slide = gallery && gallery.querySelector('[data-media-id="{{ section.id }}-' + mediaId + '"]');
+      if (slide) {
+        const current = gallery.querySelector('.product__media-item.is-active');
+        if (current) current.classList.remove('is-active');
+        slide.classList.add('is-active');
+        // Centrarlo en vista
+        try {
+          slide.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'center' });
+        } catch(_) {
+          slide.scrollIntoView({ block: 'nearest', inline: 'center' });
+        }
+      }
+    };
+
+    // Solo refrescamos precio/sku/stock (no galería, para no pelear con la app)
+    const selectorsToReplace = ['#price-{{ section.id }}', '#Sku-{{ section.id }}', '#Inventory-{{ section.id }}'];
+    const replaceFromHTML = (htmlText) => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      selectorsToReplace.forEach(sel => {
+        const fresh = doc.querySelector(sel);
+        const current = document.querySelector(sel);
+        if(fresh && current){
+          current.replaceWith(fresh);
+        }
+      });
+    };
+    const fetchSectionHTML = async (variantId) => {
+      const url = new URL(productUrl, window.location.origin);
+      url.searchParams.set('section_id', '{{ section.id }}');
+      url.searchParams.set('variant', variantId);
+      const res = await fetch(url.toString(), { credentials: 'same-origin' });
+      if(!res.ok) return;
+      const html = await res.text();
+      replaceFromHTML(html);
+    };
+
+    const onChange = async (variant) => {
+      // 1) Add to cart id
+      updateHiddenId(variant.id);
+
+      // 2) Notificar a apps/tema
+      document.dispatchEvent(new CustomEvent('variant:changed', { detail: { variant } }));
+      document.dispatchEvent(new CustomEvent('variant:change',  { detail: { variant } }));
+
+      // 3) Activar media correcto (mobile-safe)
+      if (variant.featured_media && variant.featured_media.id) {
+        activateMedia(variant.featured_media.id);
+      }
+
+      // 4) URL + Precio/stock
+      setURL(variant.id);
+      try { await fetchSectionHTML(variant.id); } catch(e){}
+    };
+
+    root.addEventListener('change', async (e) => {
+      const input = e.target;
+      if(!(input instanceof HTMLInputElement) || input.type !== 'radio') return;
+
+      const color = input.value;
+      const variant = findVariantByColor(color);
+      if(!variant) return;
+
+      const selectedValueEl = input.closest('fieldset')?.querySelector('[data-selected-value]');
+      if (selectedValueEl) selectedValueEl.textContent = color;
+
+      onChange(variant);
+    });
+
+    // Estado inicial
+    const syncInitial = () => {
+      const checked = root.querySelector('input[type="radio"]:checked');
+      if(checked){
+        const v = findVariantByColor(checked.value);
+        if(v){
+          const el = checked.closest('fieldset')?.querySelector('[data-selected-value]');
+          if (el) el.textContent = checked.value;
+          onChange(v);
+        }
+      }
+    };
+    syncInitial();
+    window.addEventListener('load', syncInitial);
+  })();
+  </script>
+{%- endunless -%}
