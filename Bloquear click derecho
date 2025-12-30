@@ -1,0 +1,25 @@
+Al final del theme.liquid pegar: 
+
+
+<script>
+      // Desactivar clic derecho, selección, arrastrar imágenes y teclas comunes de copiar
+      document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+      }, false);
+
+      document.addEventListener('selectstart', function(e) {
+        e.preventDefault();
+      }, false);
+
+      document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+      }, false);
+
+      document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey && (e.key === 'u' || e.key === 'c' || e.key === 's' || e.key === 'a')) || e.key === 'F12') {
+          e.preventDefault();
+          return false;
+        }
+      });
+    </script>
+
