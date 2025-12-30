@@ -1,0 +1,541 @@
+cyber-triple-banner.liquid
+
+{% comment %} 
+  Cyber – Triple Banner (Impact 6.11.1)
+  - Desktop: izquierda más baja; centro + derecha pegadas; CTA sobre imagen central
+  - Mobile: oculta 3ª imagen; CTA centrado sobre la imagen central
+  - Control específico del ESPACIO SUPERIOR del título en mobile
+  - Sin padding/margen vertical externos; fondo negro
+{% endcomment %}
+
+<section
+  class="cybertriple-section color-scheme-{{ section.settings.color_scheme }}"
+  style="
+    --cyber-height: {% if section.settings.full_screen %}100vh{% else %}{{ section.settings.section_height | default: 460 }}px{% endif %};
+    --cyber-left-offset: {{ section.settings.left_offset | default: 32 }}px;
+    --cyber-heading-top: var(--cyber-left-offset); /* desktop sigue a la izquierda */
+    --cyber-right-raise: {{ section.settings.right_raise | default: 40 }}px;
+    --cyber-group-gap: {{ section.settings.group_gap | default: 24 }}px;
+    --cyber-heading-size: {{ section.settings.heading_size | default: 96 }}px;
+    --cyber-heading-gap: {{ section.settings.heading_gap | default: 0 }}px;
+
+    /* Mobile */
+    --cta-mobile-bottom: {{ section.settings.cta_mobile_bottom | default: 80 }}px;
+    --cyber-mobile-heading-size: {{ section.settings.heading_size_mobile | default: 56 }}px;
+    --cyber-heading-top-mobile: {{ section.settings.heading_top_mobile | default: 12 }}px; /* <— NUEVO */
+  "
+>
+  <div class="cybertriple-inner">
+    {% if section.settings.heading != blank %}
+      <h2 class="cybertriple-heading">{{ section.settings.heading }}</h2>
+    {% endif %}
+
+    {% assign widths = "380,540,720,960,1200,1600,2000" | split: "," %}
+
+    <div class="cybertriple-row">
+      <!-- Izquierda (más baja) -->
+      <div class="cybertriple-card cybertriple-card--left" style="margin-top: var(--cyber-left-offset);">
+        {% if section.settings.image_left != blank %}
+          <img
+            srcset="{% for size in widths %}{{ section.settings.image_left | image_url: width: size }} {{ size }}w{% unless forloop.last %}, {% endunless %}{% endfor %}"
+            src="{{ section.settings.image_left | image_url: width: 1200 }}"
+            sizes="(max-width: 989px) 100vw, 33vw"
+            alt="{{ section.settings.alt_left | escape }}"
+            loading="lazy"
+            class="cybertriple-img"
+          >
+        {% else %}
+          <div class="cybertriple-placeholder"></div>
+        {% endif %}
+      </div>
+
+      <!-- Grupo derecho: Centro + Derecha PEGADAS -->
+      <div class="cybertriple-rightgroup">
+        <div class="cybertriple-card cybertriple-card--center">
+          {% if section.settings.image_center != blank %}
+            <img
+              srcset="{% for size in widths %}{{ section.settings.image_center | image_url: width: size }} {{ size }}w{% unless forloop.last %}, {% endunless %}{% endfor %}"
+              src="{{ section.settings.image_center | image_url: width: 1600 }}"
+              sizes="(max-width: 989px) 100vw, 34vw"
+              alt="{{ section.settings.alt_center | escape }}"
+              loading="lazy"
+              class="cybertriple-img"
+            >
+          {% else %}
+            <div class="cybertriple-placeholder"></div>
+          {% endif %}
+
+          {% if section.settings.button_label != blank %}
+            <!-- CTA dentro de la tarjeta central (para superponer) -->
+            <div class="cybertriple-cta">
+              <a
+                {% if section.settings.button_link != blank %}href="{{ section.settings.button_link }}"{% else %}role="button"{% endif %}
+                class="cybertriple-button"
+              >
+                {{ section.settings.button_label }}
+              </a>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="cybertriple-card cybertriple-card--right">
+          {% if section.settings.image_right != blank %}
+            <img
+              srcset="{% for size in widths %}{{ section.settings.image_right | image_url: width: size }} {{ size }}w{% unless forloop.last %}, {% endunless %}{% endfor %}"
+              src="{{ section.settings.image_right | image_url: width: 1200 }}"
+              sizes="(max-width: 989px) 100vw, 33vw"
+              alt="{{ section.settings.alt_right | escape }}"
+              loading="lazy"
+              class="cybertriple-img"
+            >
+          {% else %}
+            <div class="cybertriple-placeholder"></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Quitar padding/margen externos (Impact) */
+    #shopify-section-{{ section.id }} { padding: 0 !important; margin: 0 !important; background: #000; }
+
+    /* Contenedor full-bleed */
+    .cybertriple-inner {
+      position: relative;
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      padding: 0;
+      min-height: var(--cyber-height);
+      background: #000;
+      overflow: hidden;
+    }
+
+    /* Título */
+    .cybertriple-heading {
+      position: relative;
+      z-index: 2;
+      margin: 0;
+      margin-top: var(--cyber-heading-top); /* desktop */
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: -1px;
+      font-size: var(--cyber-heading-size);
+      line-height: var(--cyber-heading-size);
+    }
+
+    /* Fila principal (desktop) */
+    .cybertriple-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      column-gap: var(--cyber-group-gap);
+      align-items: end;
+      padding-top: var(--cyber-heading-gap);
+      padding-bottom: 0;
+      min-height: calc(
+        var(--cyber-height)
+        - var(--cyber-heading-size)
+        - var(--cyber-heading-top)
+        - var(--cyber-heading-gap)
+      );
+    }
+
+    .cybertriple-rightgroup { display: grid; grid-template-columns: 1.3fr 1fr; column-gap: 0; align-items: end; height: 100%; }
+
+    .cybertriple-card { position: relative; height: 100%; overflow: hidden; background: #111; }
+    .cybertriple-img  { width: 100%; height: 100%; display: block; object-fit: cover; }
+
+    .cybertriple-card--left { height: calc(100% - var(--cyber-left-offset)); }
+    .cybertriple-card--center,
+    .cybertriple-card--right { height: calc(100% + var(--cyber-right-raise)); }
+
+    /* CTA (desktop centrado) */
+    .cybertriple-cta { position: absolute; left: 50%; transform: translateX(-50%); bottom: 20px; z-index: 3; pointer-events: none; }
+
+    /* ====== COLORES DEL BOTÓN (actualizado) ====== */
+    .cybertriple-button {
+      pointer-events: auto;
+      display: inline-block;
+      padding: 14px 28px;
+      background:#ff0000;  
+      color: #FFF;           
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      text-decoration: none;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.25);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .cybertriple-button:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.30); }
+    .cybertriple-button:focus { outline: 2px solid #000; outline-offset: 2px; }
+
+    /* ===== Mobile ===== */
+    @media (max-width: 989px) {
+      .cybertriple-inner { min-height: auto; }
+
+      /* Tamaño y ESPACIO SUPERIOR del título en mobile (control nuevo) */
+      .cybertriple-heading {
+        font-size: var(--cyber-mobile-heading-size);
+        line-height: var(--cyber-mobile-heading-size);
+        margin-top: var(--cyber-heading-top-mobile); /* <— controla el hueco rojo */
+      }
+
+      /* 1 columna, sin la 3ª imagen */
+      .cybertriple-row { grid-template-columns: 1fr; padding-top: 8px; min-height: auto; }
+      .cybertriple-rightgroup { grid-template-columns: 1fr; }
+      .cybertriple-card--right { display: none; }
+
+      .cybertriple-card--left,
+      .cybertriple-card--center { height: 260px; }
+
+      /* CTA centrado sobre la imagen central */
+      .cybertriple-cta { left: 50%; transform: translateX(-50%); bottom: var(--cta-mobile-bottom); }
+    }
+  </style>
+</section>
+
+{% schema %}
+{
+  "name": "Cyber · Triple banner",
+  "tag": "section",
+  "class": "section cybertriple",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Título", "default": "Cyber." },
+
+    { "type": "image_picker", "id": "image_left", "label": "Imagen izquierda" },
+    { "type": "text", "id": "alt_left", "label": "Alt imagen izquierda", "default": "Cyber izquierda" },
+
+    { "type": "image_picker", "id": "image_center", "label": "Imagen central" },
+    { "type": "text", "id": "alt_center", "label": "Alt imagen central", "default": "Cyber centro" },
+
+    { "type": "image_picker", "id": "image_right", "label": "Imagen derecha" },
+    { "type": "text", "id": "alt_right", "label": "Alt imagen derecha", "default": "Cyber derecha" },
+
+    { "type": "text", "id": "button_label", "label": "Texto del botón", "default": "VER CYBER" },
+    { "type": "url", "id": "button_link", "label": "Link del botón" },
+
+    { "type": "checkbox", "id": "full_screen", "label": "Ocupar toda la pantalla (100vh)", "default": false },
+    { "type": "range", "id": "section_height", "min": 320, "max": 700, "step": 10, "unit": "px", "label": "Altura desktop", "default": 460 },
+    { "type": "range", "id": "mobile_height", "min": 300, "max": 720, "step": 10, "unit": "px", "label": "Altura móvil (referencia)", "default": 420 },
+
+    { "type": "range", "id": "left_offset", "min": 0, "max": 160, "step": 2, "unit": "px", "label": "Bajar imagen izquierda (y 'Cyber' en desktop)", "default": 32 },
+    { "type": "range", "id": "right_raise", "min": 0, "max": 180, "step": 2, "unit": "px", "label": "Elevar centro + derecha (desktop)", "default": 40 },
+
+    { "type": "range", "id": "group_gap", "min": 0, "max": 64, "step": 1, "unit": "px", "label": "Separación con la izquierda", "default": 24 },
+
+    { "type": "range", "id": "heading_size", "min": 40, "max": 220, "step": 2, "unit": "px", "label": "Tamaño de 'CYBER' (desktop)", "default": 96 },
+    { "type": "range", "id": "heading_size_mobile", "min": 28, "max": 128, "step": 2, "unit": "px", "label": "Tamaño de 'CYBER' en mobile", "default": 56 },
+    { "type": "range", "id": "heading_gap", "min": 0, "max": 100, "step": 1, "unit": "px", "label": "Espacio debajo del título (desktop)", "default": 0 },
+
+    /* NUEVO: controla el hueco por encima del título en mobile */
+    { "type": "range", "id": "heading_top_mobile", "min": 0, "max": 160, "step": 2, "unit": "px", "label": "Espacio superior del título (mobile)", "default": 12 },
+
+    /* CTA mobile centrado: solo ajusta la altura desde abajo */
+    { "type": "range", "id": "cta_mobile_bottom", "min": 0, "max": 200, "step": 2, "unit": "px", "label": "CTA móvil – distancia desde abajo", "default": 80 },
+
+    { "type": "color_scheme", "id": "color_scheme", "label": "Esquema de color", "default": "scheme-1" }
+  ],
+  "presets": [
+    { "name": "Cyber · Triple banner (compacto)", "category": "Banners" }
+  ]
+}
+{% endschema %}
+
+
+Crear documento de animación en sections: 
+
+
+ob-banner-cyber-anim.liquid
+
+
+{% comment %}
+  OB Rot CSS — Impact 6.11.0 (solo DROP-IN, full-bleed)
+  • 100% CSS, 1 mensaje visible por vez con cortes duros (steps).
+  • Full width (100vw) con fondo negro de borde a borde.
+  • Sin padding arriba/abajo. “/” opcional por bloque.
+  • Opción para ocultar en móvil.
+{% endcomment %}
+
+{%- assign blocks_count = 0 -%}
+{%- for b in section.blocks -%}{% if b.type == 'message' %}{%- assign blocks_count = blocks_count | plus: 1 -%}{% endif %}{%- endfor -%}
+
+{%- comment -%}
+  DEFAULTS ACTUALIZADOS:
+  - "Flash|Sale" -> "la mejor oferta del|año"
+  - "Hasta un|40% OFF" -> "Hasta un|50% OFF"
+{%- endcomment -%}
+{%- assign default_pairs = "aprovecha|YA,La mejor oferta del|año,solo por|pocas horas,Hasta un|50% OFF" | split: "," -%}
+
+{%- if blocks_count > 0 -%}
+  {%- assign has_blocks = true -%}
+  {%- assign total_items = blocks_count -%}
+{%- else -%}
+  {%- assign has_blocks = false -%}
+  {%- assign total_items = default_pairs.size -%}
+{%- endif -%}
+
+{%- assign interval = section.settings.interval_s -%}
+{%- assign cycle = interval | times: total_items -%}
+{%- assign stagger_ms = section.settings.word_stagger_ms -%}
+{%- assign imp = '' -%}{% if section.settings.force_animate %}{%- assign imp = ' !important' -%}{% endif %}
+
+<section class="ob-rot ob-rot--css" data-ob-id="{{ section.id }}"
+  style="--bg: {{ section.settings.bg_color }}; --fg: {{ section.settings.fg_color }}; --h: {{ section.settings.ticker_height }}px; --hm: {{ section.settings.ticker_height_m }}px; --fs: {{ section.settings.fs_desktop }}px; --fsm: {{ section.settings.fs_mobile }}px; --drop: {{ section.settings.word_drop_px }}px;">
+  <div class="ob-rot__ticker">
+    <div class="ob-rot__stage">
+
+      {%- if has_blocks -%}
+        {%- assign i = 0 -%}
+        {%- for block in section.blocks -%}{% if block.type == 'message' %}
+          {%- assign slot_start_s = interval | times: i -%}
+          <p class="ob-rot__msg ob-rot__msg--{{ i }}"
+             style="animation: ob-window-{{ section.id }}-{{ i }} {{ cycle }}s steps(1,end) infinite both 0s{{ imp }};"
+             {{ block.shopify_attributes }}>
+            {%- if block.settings.slashes -%}<span class="ob-rot__slash">/</span>{%- endif -%}
+
+            {%- assign printed = false -%}
+            {%- assign w_i = 0 -%}
+
+            {%- assign txt = block.settings.prefix | default: '' -%}
+            {%- if txt != '' -%}{%- assign words = txt | split: ' ' -%}
+              {%- for w in words -%}
+                {%- if printed -%}<span class="ob-space"></span>{%- endif -%}
+                {%- assign w_ms = stagger_ms | times: w_i -%}
+                {%- assign w_s  = w_ms | divided_by: 1000.0 -%}
+                {%- assign delay_s = slot_start_s | plus: w_s -%}
+                <span class="ob-word" style="animation: ob-word-{{ section.id }} {{ cycle }}s linear infinite both {{ delay_s }}s{{ imp }};">{{ w }}</span>
+                {%- assign printed = true -%}{%- assign w_i = w_i | plus: 1 -%}
+              {%- endfor -%}
+            {%- endif -%}
+
+            {%- assign txt = block.settings.strong | default: '' -%}
+            {%- if txt != '' -%}
+              {%- if printed -%}<span class="ob-space"></span>{%- endif -%}
+              {%- assign words = txt | split: ' ' -%}
+              {%- for w in words -%}
+                {%- if forloop.index0 > 0 -%}<span class="ob-space"></span>{%- endif -%}
+                {%- assign w_ms = stagger_ms | times: w_i -%}
+                {%- assign w_s  = w_ms | divided_by: 1000.0 -%}
+                {%- assign delay_s = slot_start_s | plus: w_s -%}
+                <span class="ob-word ob-word--strong" style="animation: ob-word-{{ section.id }} {{ cycle }}s linear infinite both {{ delay_s }}s{{ imp }};">{{ w }}</span>
+                {%- assign w_i = w_i | plus: 1 -%}
+              {%- endfor -%}
+              {%- assign printed = true -%}
+            {%- endif -%}
+
+            {%- assign txt = block.settings.suffix | default: '' -%}
+            {%- if txt != '' -%}
+              {%- if printed -%}<span class="ob-space"></span>{%- endif -%}
+              {%- assign words = txt | split: ' ' -%}
+              {%- for w in words -%}
+                {%- if forloop.index0 > 0 -%}<span class="ob-space"></span>{%- endif -%}
+                {%- assign w_ms = stagger_ms | times: w_i -%}
+                {%- assign w_s  = w_ms | divided_by: 1000.0 -%}
+                {%- assign delay_s = slot_start_s | plus: w_s -%}
+                <span class="ob-word" style="animation: ob-word-{{ section.id }} {{ cycle }}s linear infinite both {{ delay_s }}s{{ imp }};">{{ w }}</span>
+                {%- assign w_i = w_i | plus: 1 -%}
+              {%- endfor -%}
+            {%- endif -%}
+
+            {%- if block.settings.slashes -%}<span class="ob-rot__slash">/</span>{%- endif -%}
+          </p>
+          {%- assign i = i | plus: 1 -%}
+        {% endif %}{%- endfor -%}
+
+      {%- else -%}
+        {%- for pair in default_pairs -%}
+          {%- assign parts = pair | split: "|" -%}
+          {%- assign i = forloop.index0 -%}
+          {%- assign slot_start_s = interval | times: i -%}
+          <p class="ob-rot__msg ob-rot__msg--{{ i }}"
+             style="animation: ob-window-{{ section.id }}-{{ i }} {{ cycle }}s steps(1,end) infinite both 0s{{ imp }};">
+            {%- if forloop.first -%}<span class="ob-rot__slash">/</span>{%- endif -%}
+
+            {%- assign printed = false -%}
+            {%- assign w_i = 0 -%}
+
+            {%- assign words = parts[0] | split: ' ' -%}
+            {%- for w in words -%}
+              {%- if printed -%}<span class="ob-space"></span>{%- endif -%}
+              {%- assign w_ms = stagger_ms | times: w_i -%}
+              {%- assign w_s  = w_ms | divided_by: 1000.0 -%}
+              {%- assign delay_s = slot_start_s | plus: w_s -%}
+              <span class="ob-word" style="animation: ob-word-{{ section.id }} {{ cycle }}s linear infinite both {{ delay_s }}s{{ imp }};">{{ w }}</span>
+              {%- assign printed = true -%}{%- assign w_i = w_i | plus: 1 -%}
+            {%- endfor -%}
+
+            {%- if parts[1] != blank -%}
+              <span class="ob-space"></span>
+              {%- assign words = parts[1] | split: ' ' -%}
+              {%- for w in words -%}
+                {%- if forloop.index0 > 0 -%}<span class="ob-space"></span>{%- endif -%}
+                {%- assign w_ms = stagger_ms | times: w_i -%}
+                {%- assign w_s  = w_ms | divided_by: 1000.0 -%}
+                {%- assign delay_s = slot_start_s | plus: w_s -%}
+                <span class="ob-word ob-word--strong" style="animation: ob-word-{{ section.id }} {{ cycle }}s linear infinite both {{ delay_s }}s{{ imp }};">{{ w }}</span>
+                {%- assign w_i = w_i | plus: 1 -%}
+              {%- endfor -%}
+            {%- endif -%}
+
+            {%- if forloop.first -%}<span class="ob-rot__slash">/</span>{%- endif -%}
+          </p>
+        {%- endfor -%}
+      {%- endif -%}
+
+    </div>
+  </div>
+
+  <style>
+    /* Quita padding/márgenes del wrapper del tema para esta sección */
+    #shopify-section-{{ section.id }}{ padding-top:0 !important; padding-bottom:0 !important; margin:0 !important; }
+
+    /* FULL-BLEED */
+    section.ob-rot[data-ob-id="{{ section.id }}"]{
+      width:100vw; max-width:100vw;
+      position:relative; left:50%; right:50%;
+      margin-left:-50vw; margin-right:-50vw;
+      overflow:hidden;
+      background: var(--bg);
+    }
+
+    /* Estructura interna */
+    section.ob-rot[data-ob-id="{{ section.id }}"] .ob-rot__ticker{ color:var(--fg); width:100%; }
+    section.ob-rot[data-ob-id="{{ section.id }}"] .ob-rot__stage{ position:relative; display:grid; place-items:center; height:var(--h); }
+
+    /* 1 mensaje visible, cortes duros */
+    section.ob-rot[data-ob-id="{{ section.id }}"] .ob-rot__msg{
+      position:absolute; inset:0;
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:0 20px; margin:0; line-height:1; white-space:nowrap;
+      font-size:var(--fs); font-weight:300; letter-spacing:-1px;
+      pointer-events:none; opacity:0; visibility:hidden;
+      will-change:opacity,visibility;
+      background: transparent;
+    }
+
+    /* Palabras: caída simple */
+    section.ob-rot[data-ob-id="{{ section.id }}"] .ob-word{
+      display:inline-block; opacity:0; transform:translateY(calc(var(--drop) * -1));
+      will-change:opacity,transform;
+    }
+    @keyframes ob-word-{{ section.id }}{
+      0%   { opacity:0; transform:translateY(calc(var(--drop) * -1)); }
+      8%   { opacity:1; transform:translateY(0); }
+      100% { opacity:1; transform:translateY(0); }
+    }
+
+    /* Espacio fijo entre palabras */
+    section.ob-rot[data-ob-id="{{ section.id }}"] .ob-space{
+      display:inline-block; width:20px; min-width:12px; height:1em; line-height:1;
+      font-size:0; letter-spacing:0 !important;
+    }
+
+    /* Ocultar en móvil (opcional vía setting) */
+    {% if section.settings.hide_mobile %}
+    @media (max-width:749px){
+      #shopify-section-{{ section.id }}{ display:none !important; }
+    }
+    {% endif %}
+
+    @media (max-width:749px){
+      section.ob-rot[data-ob-id="{{ section.id }}"] .ob-rot__stage{ height:var(--hm); }
+      section.ob-rot[data-ob-id="{{ section.id }}"] .ob-rot__msg{ font-size:var(--fsm); }
+      section.ob-rot[data-ob-id="{{ section.id }}"] .ob-rot__slash{ margin:0 12px; }
+      section.ob-rot[data-ob-id="{{ section.id }}"] .ob-space{ width:8px; min-width:8px; }
+    }
+
+    /* Estética */
+    section.ob-rot[data-ob-id="{{ section.id }}"] .ob-rot__slash{ opacity:.9; margin:0 20px; }
+    section.ob-rot[data-ob-id="{{ section.id }}"] .ob-word--strong{ font-weight:800; letter-spacing:-1.5px; }
+
+    {% unless section.settings.force_animate %}
+    @media (prefers-reduced-motion:reduce){
+      section.ob-rot[data-ob-id="{{ section.id }}"] .ob-rot__msg{ opacity:1; visibility:visible; animation:none !important; }
+      section.ob-rot[data-ob-id="{{ section.id }}"] .ob-word{ opacity:1; transform:none; animation:none !important; }
+    }
+    {% endunless %}
+  </style>
+
+  {%- comment -%} Ventanas por mensaje SIN overlap (cortes duros) {%- endcomment -%}
+  <style>
+    {%- assign slot = 100.0 | divided_by: total_items -%}
+    {%- assign pad_in = slot | times: 6 | divided_by: 100.0 -%}
+    {%- assign pad_out = slot | times: 6 | divided_by: 100.0 -%}
+    {%- if has_blocks -%}
+      {%- assign i = 0 -%}
+      {%- for block in section.blocks -%}{% if block.type == 'message' -%}
+        {%- assign start = slot | times: i | plus: pad_in -%}
+        {%- assign end   = slot | times: i | plus: slot | minus: pad_out -%}
+        {%- assign cut   = end | plus: 0.2 -%}
+@keyframes ob-window-{{ section.id }}-{{ i }}{
+  0%   { opacity:0; visibility:hidden; }
+  {{ start }}% { opacity:1; visibility:visible; }
+  {{ end }}%   { opacity:1; visibility:visible; }
+  {{ cut }}%, 100% { opacity:0; visibility:hidden; }
+}
+        {%- assign i = i | plus: 1 -%}{% endif -%}{%- endfor -%}
+    {%- else -%}
+      {%- for pair in default_pairs -%}
+        {%- assign i = forloop.index0 -%}
+        {%- assign start = slot | times: i | plus: pad_in -%}
+        {%- assign end   = slot | times: i | plus: slot | minus: pad_out -%}
+        {%- assign cut   = end | plus: 0.2 -%}
+@keyframes ob-window-{{ section.id }}-{{ i }}{
+  0%   { opacity:0; visibility:hidden; }
+  {{ start }}% { opacity:1; visibility:visible; }
+  {{ end }}%   { opacity:1; visibility:visible; }
+  {{ cut }}%, 100% { opacity:0; visibility:hidden; }
+}
+      {%- endfor -%}
+    {%- endif -%}
+  </style>
+</section>
+
+{% schema %}
+{
+  "name": "OB Rot CSS",
+  "class": "section section--ob-rot-css",
+  "settings": [
+    { "type": "header", "content": "Estilos" },
+    { "type": "color", "id": "bg_color", "label": "Fondo", "default": "#000000" },
+    { "type": "color", "id": "fg_color", "label": "Texto", "default": "#ffffff" },
+    { "type": "range", "id": "ticker_height", "label": "Alto desktop", "min": 80, "max": 260, "step": 2, "unit": "px", "default": 180 },
+    { "type": "range", "id": "ticker_height_m", "label": "Alto móvil", "min": 60, "max": 200, "step": 2, "unit": "px", "default": 120 },
+    { "type": "range", "id": "fs_desktop", "label": "Fuente desktop", "min": 40, "max": 220, "step": 2, "unit": "px", "default": 140 },
+    { "type": "range", "id": "fs_mobile", "label": "Fuente móvil", "min": 26, "max": 140, "step": 2, "unit": "px", "default": 64 },
+
+    { "type": "header", "content": "Animación" },
+    { "type": "range", "id": "interval_s", "label": "Segundos por mensaje", "min": 2, "max": 12, "step": 1, "unit": "s", "default": 3 },
+    { "type": "range", "id": "word_stagger_ms", "label": "Desfase entre palabras", "min": 60, "max": 800, "step": 20, "unit": "ms", "default": 140 },
+    { "type": "range", "id": "word_drop_px", "label": "Distancia de caída", "min": 6, "max": 80, "step": 2, "unit": "px", "default": 24 },
+    { "type": "checkbox", "id": "force_animate", "label": "Forzar animación (ignora reducir movimiento)", "default": true },
+
+    { "type": "header", "content": "Visibilidad" },
+    { "type": "checkbox", "id": "hide_mobile", "label": "Ocultar en móvil (≤ 749px)", "default": true }
+  ],
+  "blocks": [
+    { "type": "message", "name": "Msg",
+      "settings": [
+        { "type": "text", "id": "prefix", "label": "Prefijo (ej. aprovecha)" },
+        { "type": "text", "id": "strong", "label": "Palabra fuerte (bold)" },
+        { "type": "text", "id": "suffix", "label": "Sufijo (opcional)" },
+        { "type": "checkbox", "id": "slashes", "label": "Mostrar / a los lados", "default": false }
+      ] }
+  ],
+  "max_blocks": 10,
+  "presets": [
+    { "name": "OB Rot CSS",
+      "blocks": [
+        { "type": "message", "settings": { "prefix": "aprovecha", "strong": "hoy", "slashes": true } },
+        { "type": "message", "settings": { "prefix": "la mejor oferta del", "strong": "año" } },
+        { "type": "message", "settings": { "prefix": "solo por", "strong": "pocas horas" } },
+        { "type": "message", "settings": { "prefix": "Hasta un", "strong": "50% OFF" } }
+      ] }
+  ]
+}
+{% endschema %}
+
+{% javascript %}{% endjavascript %}
