@@ -1,0 +1,328 @@
+{% comment %}
+  Texto + Video CENTRADO – Minimog 5.5.0
+  - Pila vertical: Texto arriba (centrado) y Video abajo (centrado).
+  - Desktop: video con aspect ratio configurable (horizontal por defecto) y ancho máximo editable (+ override manual).
+  - Mobile: video cuadrado (1/1 por defecto).
+  - Gap independiente desktop/mobile, tamaños mobile y font-weight configurables.
+{% endcomment %}
+
+{%- liquid
+  assign container_class = section.settings.container
+
+  comment
+    Preparar ancho máximo del video en desktop:
+    - Si "video_max_width_desktop_manual" tiene valor, usarlo (si no trae "px", lo agregamos).
+    - Si está vacío, usar el range (en px).
+  endcomment
+  assign manual = section.settings.video_max_width_desktop_manual | strip
+  if manual != blank
+    if manual contains 'px'
+      assign video_max_w = manual
+    else
+      assign video_max_w = manual | append: 'px'
+    endif
+  else
+    assign video_max_w = section.settings.video_max_width_desktop | append: 'px'
+  endif
+-%}
+
+<section
+  id="mm-text-video-centered-{{ section.id }}"
+  class="mm-tvc mm-tvc--{{ section.id }}"
+  style="
+    --mm-tvc-gap: {{ section.settings.gap }}px;
+    --mm-tvc-gap-m: {{ section.settings.gap_mobile }}px;
+    --mm-tvc-radius: {{ section.settings.radius }}px;
+    --mm-tvc-pt: {{ section.settings.padding_top }}px;
+    --mm-tvc-pb: {{ section.settings.padding_bottom }}px;
+    --mm-tvc-title-size: {{ section.settings.title_size }}px;
+    --mm-tvc-title-size-m: {{ section.settings.title_size_mobile }}px;
+    --mm-tvc-title-weight: {{ section.settings.title_weight }};
+    --mm-tvc-subtitle-size: {{ section.settings.subtitle_size }}px;
+    --mm-tvc-subtitle-size-m: {{ section.settings.subtitle_size_mobile }}px;
+    --mm-tvc-subtitle-weight: {{ section.settings.subtitle_weight }};
+    --mm-tvc-text-max: {{ section.settings.text_max_width }}px;
+
+    --mm-tvc-ar-d: {{ section.settings.aspect_ratio_desktop }};
+    --mm-tvc-ar-m: {{ section.settings.aspect_ratio_mobile }};
+    --mm-tvc-video-max: {{ video_max_w }};
+  "
+>
+  <div class="{% if container_class == 'container' %}container{% elsif container_class == 'container-fluid' %}container-fluid{% else %}mm-tvc__container{% endif %}">
+    <div class="mm-tvc__grid">
+      <!-- Texto centrado (arriba) -->
+      <div class="mm-tvc__col mm-tvc__col--text">
+        {% if section.settings.title != blank %}
+          <h2 class="mm-tvc__title">{{ section.settings.title }}</h2>
+        {% endif %}
+        {% if section.settings.subtitle != blank %}
+          <div class="mm-tvc__subtitle">{{ section.settings.subtitle }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Video centrado (abajo) -->
+      <div class="mm-tvc__col mm-tvc__col--media">
+        <div class="mm-tvc__media">
+          {%- comment -%} 1) Video de la librería {%- endcomment -%}
+          {% if section.settings.video != blank %}
+            {{ section.settings.video
+              | video_tag:
+                autoplay: section.settings.autoplay,
+                loop: section.settings.loop,
+                muted: section.settings.muted,
+                controls: section.settings.controls,
+                playsinline: true,
+                class: 'mm-tvc__video-el',
+                image_size: '1024x'
+            }}
+          {%- comment -%} 2) YouTube/Vimeo {%- endcomment -%}
+          {% elsif section.settings.video_url != blank %}
+            {% liquid
+              assign provider = section.settings.video_url.type
+              assign id = section.settings.video_url.id
+            %}
+            {% capture yt_autoplay %}{% if section.settings.autoplay %}1{% else %}0{% endif %}{% endcapture %}
+            {% capture yt_muted %}{% if section.settings.muted %}1{% else %}0{% endif %}{% endcapture %}
+            {% capture yt_loop %}{% if section.settings.loop %}1{% else %}0{% endif %}{% endcapture %}
+            {% capture yt_controls %}{% if section.settings.controls %}1{% else %}0{% endif %}{% endcapture %}
+
+            {% if provider == 'youtube' %}
+              <iframe
+                class="mm-tvc__iframe"
+                src="https://www.youtube.com/embed/{{ id }}?autoplay={{ yt_autoplay }}&mute={{ yt_muted }}&loop={{ yt_loop }}{% if section.settings.loop %}&playlist={{ id }}{% endif %}&controls={{ yt_controls }}&rel=0&playsinline=1&modestbranding=1"
+                title="{{ section.settings.title | escape }}"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowfullscreen
+                loading="lazy"
+              ></iframe>
+            {% elsif provider == 'vimeo' %}
+              <iframe
+                class="mm-tvc__iframe"
+                src="https://player.vimeo.com/video/{{ id }}?autoplay={{ yt_autoplay }}&muted={{ yt_muted }}&loop={{ yt_loop }}{% unless section.settings.controls %}&background=1&controls=0{% endunless %}"
+                title="{{ section.settings.title | escape }}"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowfullscreen
+                loading="lazy"
+              ></iframe>
+            {% endif %}
+          {%- comment -%} 3) MP4 directo {%- endcomment -%}
+          {% elsif section.settings.mp4_url != blank %}
+            <video
+              class="mm-tvc__video-el"
+              {% if section.settings.poster != blank %}poster="{{ section.settings.poster | image_url: width: 1440 }}"{% endif %}
+              {% if section.settings.autoplay %}autoplay{% endif %}
+              {% if section.settings.loop %}loop{% endif %}
+              {% if section.settings.muted %}muted{% endif %}
+              {% if section.settings.controls %}controls{% endif %}
+              playsinline
+            >
+              <source src="{{ section.settings.mp4_url }}" type="video/mp4">
+            </video>
+          {% else %}
+            <div class="mm-tvc__placeholder">
+              <div class="mm-tvc__ph-text">Añade un video en la configuración de la sección.</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ====== Layout / Spacing ====== */
+  #mm-text-video-centered-{{ section.id }} {
+    padding-top: var(--mm-tvc-pt);
+    padding-bottom: var(--mm-tvc-pb);
+  }
+  #mm-text-video-centered-{{ section.id }} .mm-tvc__container { width: 100%; padding-left: 20px; padding-right: 20px; }
+
+  /* Desktop: pila vertical con gap desktop */
+  @media (min-width: 992px) {
+    #mm-text-video-centered-{{ section.id }} .mm-tvc__grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "text"
+        "media";
+      justify-items: center;
+      align-items: start;
+      gap: var(--mm-tvc-gap);
+    }
+    #mm-text-video-centered-{{ section.id }} .mm-tvc__col--text { grid-area: text; }
+    #mm-text-video-centered-{{ section.id }} .mm-tvc__col--media { grid-area: media; }
+  }
+
+  /* Mobile: pila vertical con gap mobile */
+  @media (max-width: 991px) {
+    #mm-text-video-centered-{{ section.id }} .mm-tvc__grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--mm-tvc-gap-m);
+      align-items: center;
+    }
+    #mm-text-video-centered-{{ section.id }} .mm-tvc__col { width: 100%; }
+  }
+
+  /* ====== Tipografía (centrada) ====== */
+  #mm-text-video-centered-{{ section.id }} .mm-tvc__col--text {
+    max-width: var(--mm-tvc-text-max);
+    margin-left: auto; margin-right: auto;
+    text-align: center;
+  }
+  #mm-text-video-centered-{{ section.id }} .mm-tvc__title {
+    margin: 0 0 16px 0;
+    font-weight: var(--mm-tvc-title-weight);
+    font-size: var(--mm-tvc-title-size);
+    line-height: 1.1;
+    letter-spacing: -0.2px;
+  }
+  #mm-text-video-centered-{{ section.id }} .mm-tvc__subtitle {
+    margin-top: 12px;
+    color: rgba(0,0,0,.75);
+    font-weight: var(--mm-tvc-subtitle-weight);
+    font-size: var(--mm-tvc-subtitle-size);
+    line-height: 1.6;
+  }
+
+  /* ====== Media (centrado + ratios responsive) ====== */
+  #mm-text-video-centered-{{ section.id }} .mm-tvc__media {
+    width: 100%;
+    max-width: var(--mm-tvc-video-max);
+    border-radius: var(--mm-tvc-radius);
+    overflow: hidden;
+    position: relative;
+    margin-left: auto; margin-right: auto;
+    aspect-ratio: var(--mm-tvc-ar-d); /* desktop */
+  }
+  #mm-text-video-centered-{{ section.id }} .mm-tvc__video-el,
+  #mm-text-video-centered-{{ section.id }} .mm-tvc__iframe {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    border: 0;
+    background: #000;
+    border-radius: inherit; /* asegura el radio también en el elemento */
+  }
+
+  /* Mobile: cuadrado + ancho completo */
+  @media (max-width: 991px) {
+    #mm-text-video-centered-{{ section.id }} .mm-tvc__media {
+      max-width: 100%;
+      aspect-ratio: var(--mm-tvc-ar-m); /* mobile */
+    }
+  }
+
+  /* ====== Placeholder ====== */
+  #mm-text-video-centered-{{ section.id }} .mm-tvc__placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
+    background: #f2f2f2;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--mm-tvc-radius);
+  }
+  #mm-text-video-centered-{{ section.id }} .mm-tvc__ph-text { font-size: 14px; color: #6b6b6b; }
+
+  /* ====== Responsive font sizes ====== */
+  @media (max-width: 991px) {
+    #mm-text-video-centered-{{ section.id }} .mm-tvc__title { font-size: var(--mm-tvc-title-size-m); }
+    #mm-text-video-centered-{{ section.id }} .mm-tvc__subtitle { font-size: var(--mm-tvc-subtitle-size-m); }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Texto + Video (Centrado)",
+  "tag": "section",
+  "class": "mm-text-video-centered",
+  "settings": [
+    {
+      "type": "select",
+      "id": "container",
+      "label": "Ancho del contenedor",
+      "options": [
+        { "label": "container (Minimog)", "value": "container" },
+        { "label": "container-fluid (Minimog)", "value": "container-fluid" },
+        { "label": "Ancho completo (full-bleed)", "value": "full" }
+      ],
+      "default": "container"
+    },
+
+    { "type": "text", "id": "title", "label": "Título", "default": "Título centrado atractivo" },
+    { "type": "richtext", "id": "subtitle", "label": "Descripción", "default": "<p>Un texto descriptivo conciso, centrado y claro para acompañar el video.</p>" },
+
+    { "type": "range", "id": "title_size", "min": 24, "max": 72, "step": 1, "unit": "px", "label": "Tamaño título (desktop)", "default": 56 },
+    { "type": "range", "id": "title_size_mobile", "min": 16, "max": 56, "step": 1, "unit": "px", "label": "Tamaño título (mobile)", "default": 32 },
+    {
+      "type": "select",
+      "id": "title_weight",
+      "label": "Peso (font-weight) título",
+      "options": [
+        { "label": "300", "value": "300" },
+        { "label": "400", "value": "400" },
+        { "label": "500", "value": "500" },
+        { "label": "600", "value": "600" },
+        { "label": "700", "value": "700" },
+        { "label": "800", "value": "800" },
+        { "label": "900", "value": "900" }
+      ],
+      "default": "700"
+    },
+
+    { "type": "range", "id": "subtitle_size", "min": 12, "max": 28, "step": 1, "unit": "px", "label": "Tamaño descripción (desktop)", "default": 18 },
+    { "type": "range", "id": "subtitle_size_mobile", "min": 12, "max": 24, "step": 1, "unit": "px", "label": "Tamaño descripción (mobile)", "default": 16 },
+    {
+      "type": "select",
+      "id": "subtitle_weight",
+      "label": "Peso (font-weight) descripción",
+      "options": [
+        { "label": "300", "value": "300" },
+        { "label": "400", "value": "400" },
+        { "label": "500", "value": "500" },
+        { "label": "600", "value": "600" },
+        { "label": "700", "value": "700" }
+      ],
+      "default": "400"
+    },
+
+    { "type": "range", "id": "text_max_width", "min": 360, "max": 900, "step": 10, "unit": "px", "label": "Ancho máx. del texto", "default": 700 },
+
+    { "type": "header", "content": "Fuente de video" },
+    { "type": "video", "id": "video", "label": "Video (librería)" },
+    {
+      "type": "video_url",
+      "id": "video_url",
+      "label": "YouTube/Vimeo (alternativa)",
+      "accept": ["youtube", "vimeo"]
+    },
+    { "type": "url", "id": "mp4_url", "label": "MP4 directo (alternativa)", "info": "URL completa a un archivo .mp4" },
+    { "type": "image_picker", "id": "poster", "label": "Poster para MP4 (opcional)" },
+
+    { "type": "checkbox", "id": "autoplay", "label": "Autoplay", "default": true },
+    { "type": "checkbox", "id": "muted", "label": "Muted (recomendado para autoplay)", "default": true },
+    { "type": "checkbox", "id": "loop", "label": "Loop", "default": true },
+    { "type": "checkbox", "id": "controls", "label": "Mostrar controles", "default": false },
+
+    { "type": "header", "content": "Tamaño y proporción del video" },
+    { "type": "text", "id": "aspect_ratio_desktop", "label": "Aspect ratio (desktop, CSS)", "info": "Ej.: 16/9, 4/3, 21/9", "default": "16/9" },
+    { "type": "text", "id": "aspect_ratio_mobile", "label": "Aspect ratio (mobile, CSS)", "info": "Ej.: 1/1 para cuadrado", "default": "1/1" },
+    { "type": "range", "id": "video_max_width_desktop", "min": 320, "max": 1600, "step": 20, "unit": "px", "label": "Ancho máximo del video (desktop)", "default": 960 },
+    { "type": "text", "id": "video_max_width_desktop_manual", "label": "Override ancho máx. (desktop)", "info": "Solo número o número con px (p. ej. 920 o 920px). Dejar vacío para usar el control anterior." },
+
+    { "type": "header", "content": "Corners" },
+    { "type": "range", "id": "radius", "min": 0, "max": 48, "step": 1, "unit": "px", "label": "Borde redondeado del video", "default": 24 },
+
+    { "type": "header", "content": "Espaciados" },
+    { "type": "range", "id": "gap", "min": 12, "max": 80, "step": 2, "unit": "px", "label": "Separación texto ↔ video (desktop)", "default": 40 },
+    { "type": "range", "id": "gap_mobile", "min": 8, "max": 64, "step": 2, "unit": "px", "label": "Separación texto ↔ video (mobile)", "default": 24 },
+
+    { "type": "range", "id": "padding_top", "min": 0, "max": 160, "step": 4, "unit": "px", "label": "Padding superior", "default": 80 },
+    { "type": "range", "id": "padding_bottom", "min": 0, "max": 160, "step": 4, "unit": "px", "label": "Padding inferior", "default": 80 }
+  ],
+  "presets": [
+    { "name": "Texto + Video (Centrado)", "category": "Secciones personalizadas" }
+  ]
+}
+{% endschema %}
