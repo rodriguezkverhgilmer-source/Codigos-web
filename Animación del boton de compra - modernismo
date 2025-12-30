@@ -1,0 +1,160 @@
+Archivos a crear
+
+assets/buy-now-pulse-impact.js
+
+
+// buy-now-pulse (Impact 6.11.2) — v6-ATC (Zoom/Pulse en el botón "Añadir al carrito")
+(function () {
+  'use strict';
+
+  // ===== Config =====
+  var PULSE_INTERVAL_MS = 10000;     // cada 10 s
+  var DURATION_MS = 700;             // duración del zoom
+  var SCALE_MAX = 1.06;              // intensidad (1.04–1.08 recomendado)
+  var ENABLE_LOGS = false;           // pon true para depurar
+  var RESPECT_PREFERS_REDUCED_MOTION = false; // false = siempre anima
+
+  function log(){ if(ENABLE_LOGS) console.log('[buy-now-pulse Impact v6-ATC]', ...arguments); }
+
+  // Guard para evitar dobles inits
+  if (window.__buyNowPulseImpactATC) { log('ya inicializado'); return; }
+  window.__buyNowPulseImpactATC = true;
+
+  // ===== Contexto producto en Impact =====
+  var isProductContext =
+    /\/products\//.test(location.pathname) ||
+    document.body.classList.contains('template-product') ||
+    document.querySelector('section[data-section-type="product"]') ||
+    document.querySelector('section[id^="shopify-section-"][data-section-type="main-product"]');
+  if (!isProductContext) { log('no es producto'); return; }
+
+  // ===== Selectores del botón "Añadir al carrito" (Impact + OS 2.0 genérico) =====
+  var ATC_SELECTORS = [
+    'product-form button[name="add"]',                  // Web component product-form
+    '.product-form button[name="add"]',                 // Dentro del form del tema
+    'form[action*="/cart/add"] button[type="submit"]',  // Genérico OS 2.0
+    '.product-form__submit',                            // Alias común
+    '.product-form .button--primary[type="submit"]'     // Impact: botón primario de submit
+  ];
+
+  // IntersectionObserver para no animar fuera de viewport
+  var inViewMap = new WeakMap();
+  var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) { inViewMap.set(entry.target, entry.isIntersecting); });
+  }, { threshold: 0.05 }) : null;
+
+  function reduceMotion(){
+    var sys = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    return RESPECT_PREFERS_REDUCED_MOTION && sys;
+  }
+
+  function qsa(sel, root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); }
+  function uniq(arr){ return arr.filter(function(x, i){ return arr.indexOf(x) === i; }); }
+  function visibleEnabled(nodes){
+    return nodes.filter(function(n){
+      return n && n.offsetParent !== null && !n.disabled && getComputedStyle(n).visibility !== 'hidden';
+    });
+  }
+
+  function findATC(root){
+    var list = [];
+    ATC_SELECTORS.forEach(function(s){ list = list.concat(qsa(s, root||document)); });
+    return uniq(visibleEnabled(list));
+  }
+
+  // ===== Animación Zoom/Pulse (WAAPI) con fallback por clase opcional =====
+  function pulseOnce(el){
+    if (reduceMotion()) return;
+
+    // Si IO aún no “sabe”, asumimos visible (evita perder primer pulso)
+    var inView = io ? (inViewMap.has(el) ? !!inViewMap.get(el) : true) : true;
+    if (!inView) return;
+    if (el.matches(':hover')) return;
+
+    var keyframes = [
+      { transform: 'scale(1)' },
+      { transform: 'scale(' + SCALE_MAX + ')' },
+      { transform: 'scale(1)' }
+    ];
+    try {
+      el.animate(keyframes, { duration: DURATION_MS, easing: 'ease-in-out', iterations: 1 });
+    } catch (e) {
+      el.classList.add('buy-now-pulse--zoom');
+      setTimeout(function(){ el.classList.remove('buy-now-pulse--zoom'); }, DURATION_MS + 50);
+    }
+  }
+
+  // ===== Loop persistente: re-descubre el ATC en cada tick =====
+  var intervalId = null;
+  function startLoop(){
+    var firstTargets = findATC(document);
+    if (io && firstTargets.length) firstTargets.forEach(function(t){ io.observe(t); });
+
+    // Triple pulso inicial para validar enseguida
+    setTimeout(function(){ firstTargets.forEach(pulseOnce); }, 150);
+    setTimeout(function(){ firstTargets.forEach(pulseOnce); }, 900);
+    setTimeout(function(){ firstTargets.forEach(pulseOnce); }, 1800);
+
+    if (intervalId) clearInterval(intervalId);
+    intervalId = setInterval(function(){
+      var targets = findATC(document);
+      if (io && targets.length) targets.forEach(function(t){ io.observe(t); });
+      targets.forEach(pulseOnce);
+    }, PULSE_INTERVAL_MS);
+
+    log('loop ATC iniciado: cada', PULSE_INTERVAL_MS, 'ms');
+  }
+
+  function boot(){ startLoop(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
+  // Impact rehidrata secciones; reengancha al vuelo
+  document.addEventListener('shopify:section:load', function(){ startLoop(); });
+
+})();
+
+
+
+
+
+Luego crear:
+
+assets/buy-now-pulse-impact.css
+
+/* Namespace: buy-now-pulse Impact (fallback) */
+.buy-now-pulse--zoom {
+  animation: buy-now-pulse-zoom 700ms ease-in-out 1;
+}
+@keyframes buy-now-pulse-zoom {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .buy-now-pulse--zoom { animation: none !important; }
+}
+
+
+
+
+ncluir en el tema
+
+Edita layout/theme.liquid:
+
+
+(Si usas el CSS opcional) antes de </head>
+
+
+{% if template.name == 'product' %}
+  {{ 'buy-now-pulse-impact.css' | asset_url | stylesheet_tag }}
+{% endif %}
+
+
+Siempre, antes de </body> (JS)
+
+
+
+{% if template.name == 'product' %}
+  <script src="{{ 'buy-now-pulse-impact.js' | asset_url }}" defer></script>
+{% endif %}
