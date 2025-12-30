@@ -1,0 +1,398 @@
+{%- comment -%}
+  Mobile menu — Dawn 15.4.0
+  - Texto: “Sofá Buggy” (antes Sofá Playground)
+  - Orden: Sofá Buggy, Buggy (Chunk), Arcos Mágicos, Quienes somos, Tecnología Growtech, Inicio
+  - Buggy/Arcos siempre visibles (aunque no estén en el menú)
+  - Íconos grandes solo en estos 3, con títulos alineados
+  - Kids REMOVIDO
+{%- endcomment -%}
+
+<style>
+  :root{
+    --mm-col-w: 60px;
+    --mm-row-gap: 10px;
+
+    --mm-thumb-h: 24px;
+
+    /* Dimensiones comunes (Sofá/Productos) */
+    --mm-prod-w: 58px;
+    --mm-prod-h: 36px;
+
+    /* Nudge Sofá/Productos (lista) */
+    --mm-prod-nudge-x: -5px;
+    --mm-prod-nudge-y: 0px;
+
+    /* Iconos “Veja também” */
+    --mm-ico-col-w: 20px;
+    --mm-ico-base: 16px;
+    --mm-ico-prod: 22px;
+    --mm-ico-prod-nudge-x: 0px;
+    --mm-ico-prod-nudge-y: 0px;
+
+    /* Banner */
+    --mm-promo-pt: 110px;
+    --mm-promo-max-h: 260px;
+
+    /* Gap superior */
+    --mm-top-gap: 5px;
+
+    /* Solo los 3 grandes (manteniendo misma columna para alinear títulos) */
+    --mm-prod-lg-w: 45px;
+    --mm-prod-lg-h: 30px;
+    --mm-prod-lg-nudge-x: -5px;
+    --mm-prod-lg-nudge-y: 0px;
+  }
+
+  .mmobile__list{list-style:none;margin:0;padding:0}
+  .mmobile__item{border-bottom:1px solid rgba(0,0,0,.06)}
+  .mmobile__link{display:flex;align-items:center;gap:var(--mm-row-gap);padding:16px 16px;text-decoration:none}
+
+  .menu-drawer .mmobile__thumb{
+    width:var(--mm-col-w)!important;flex:0 0 var(--mm-col-w)!important;height:var(--mm-thumb-h);
+    display:flex;align-items:center;justify-content:flex-start;background:transparent!important;border-radius:0!important;box-shadow:none!important;overflow:visible;line-height:0;
+  }
+  .menu-drawer .mmobile__img{
+    width:auto!important;height:auto!important;max-height:var(--mm-thumb-h);max-width:100%;
+    object-fit:contain!important;display:block;background:transparent!important;border-radius:0!important;transform:none;
+  }
+
+  /* Caja para Sofá/Productos (define la columna para TODOS: 60px) */
+  .menu-drawer .mmobile__item--productos .mmobile__thumb,
+  .menu-drawer .mmobile__item--sofas .mmobile__thumb{
+    position:relative;height:var(--mm-prod-h);
+    margin-right:calc(var(--mm-col-w) - var(--mm-prod-w));
+  }
+  .menu-drawer .mmobile__item--productos .mmobile__img,
+  .menu-drawer .mmobile__item--sofas .mmobile__img{
+    max-height:var(--mm-prod-h);max-width:var(--mm-prod-w);
+    transform:translate(var(--mm-prod-nudge-x),var(--mm-prod-nudge-y));
+  }
+
+  /* Solo los 3 grandes */
+  .menu-drawer .mmobile__item--lg .mmobile__thumb{height:var(--mm-prod-lg-h);}
+  .menu-drawer .mmobile__item--lg .mmobile__img{
+    max-height:var(--mm-prod-lg-h);
+    max-width:var(--mm-prod-lg-w);
+    transform:translate(var(--mm-prod-lg-nudge-x),var(--mm-prod-lg-nudge-y));
+  }
+
+  /* Iconos “Veja também” */
+  .menu-drawer .mmobile__thumb--icon{
+    width:var(--mm-ico-col-w)!important;flex:0 0 var(--mm-ico-col-w)!important;height:var(--mm-ico-base);
+    display:flex;align-items:center;justify-content:flex-start;
+  }
+  .menu-drawer .mmobile__icon-img{
+    width:auto!important;height:auto!important;max-height:var(--mm-ico-base);max-width:100%;
+    object-fit:contain!important;display:block;transform:none;
+  }
+  .menu-drawer .mmobile__item--productos-icon .mmobile__thumb--icon,
+  .menu-drawer .mmobile__item--sofas-icon .mmobile__thumb--icon{
+    height:var(--mm-ico-prod);margin-right:calc(var(--mm-ico-col-w) - var(--mm-ico-prod));
+  }
+  .menu-drawer .mmobile__item--productos-icon .mmobile__icon-img,
+  .menu-drawer .mmobile__item--sofas-icon .mmobile__icon-img{
+    max-height:var(--mm-ico-prod);
+    transform:translate(var(--mm-ico-prod-nudge-x),var(--mm-ico-prod-nudge-y));
+  }
+
+  .mmobile__text{flex:1 1 auto;display:flex;align-items:center}
+  .mmobile__title{font-size:18px;line-height:1.2;color:inherit}
+  .mmobile__chevron{opacity:.6;align-self:center}
+  .mmobile__heading{padding:12px 16px;color:#888;font-weight:600;letter-spacing:.04em}
+
+  .mmobile__promo{padding:var(--mm-promo-pt) 16px 16px;}
+  .mmobile__promo-card{position:relative;border-radius:15px;overflow:hidden;}
+  .mmobile__promo-card img{width:100%;height:170px;display:block;max-height:var(--mm-promo-max-h);object-fit:cover;}
+  :root{ --mm-promo-pt: 30px; }
+
+  #menu-drawer .menu-drawer__navigation-container{padding-top:var(--mm-top-gap)!important;}
+  #menu-drawer .menu-drawer__navigation{padding-top:0!important;margin-top:0!important;}
+  #menu-drawer .menu-drawer__navigation > *:first-child{margin-top:0!important;}
+
+  /* Colores/estados */
+  .menu-drawer .mmobile__link:hover .mmobile__title{color:#F78063;}
+  .menu-drawer .mmobile__link:focus .mmobile__title,
+  .menu-drawer .mmobile__link:focus-visible .mmobile__title,
+  .menu-drawer .mmobile__link:active .mmobile__title{color:#625DFE;}
+  .menu-drawer .mmobile__chevron{transition:color .2s ease;}
+  .menu-drawer .mmobile__link:hover .mmobile__chevron{color:#F78063;}
+  .menu-drawer .mmobile__link:focus .mmobile__chevron,
+  .menu-drawer .mmobile__link:focus-visible .mmobile__chevron,
+  .menu-drawer .mmobile__link:active .mmobile__chevron{color:#625DFE;}
+  .menu-drawer .mmobile__link{color:#625DFE;}
+  .menu-drawer .mmobile__title,.menu-drawer .mmobile__chevron{color:inherit;}
+  .menu-drawer .mmobile__link:hover{color:#F78063;}
+  .menu-drawer .mmobile__link:focus,
+  .menu-drawer .mmobile__link:focus-visible,
+  .menu-drawer .mmobile__link:active{color:#625DFE;}
+</style>
+
+{%- liquid
+  assign products_menu = linklists['mobile-products']
+  if products_menu == blank or products_menu.links.size == 0
+    assign products_menu = section.settings.menu
+  endif
+  assign sub_menu    = linklists['mobile-subcategories']
+  assign extras_menu = linklists['mobile-extras']
+
+  assign sofa_src     = 'https://cdn.shopify.com/s/files/1/0970/3971/2565/files/Menu_mobile_2.png?v=1762207220'
+  assign quienes_src  = 'https://cdn.shopify.com/s/files/1/0970/3971/2565/files/empresa_boxi_kids.png?v=1762089915'
+  assign tech_src     = 'https://cdn.shopify.com/s/files/1/0970/3971/2565/files/boxi_kids_nube.png?v=1762089915'
+  assign home_src     = 'https://cdn.shopify.com/s/files/1/0970/3971/2565/files/boxi_kids_inicio.png?v=1762089915'
+
+  comment
+    URLs manuales por defecto (ajusta si tu tienda usa otros handles/rutas)
+  endcomment
+  assign buggy_url = 'https://ks5ch0-np.myshopify.com/products/sofa-playroom-copia?variant=51458619212085'
+  assign arcos_url = 'https://ks5ch0-np.myshopify.com/products/set-de-arcos?variant=51459077505333'
+
+  comment
+    Imágenes definitivas facilitadas
+  endcomment
+  assign buggy_src = 'https://cdn.shopify.com/s/files/1/0970/3971/2565/files/Menu_mobile_1.png?v=1762207220'
+  assign arcos_src = 'https://cdn.shopify.com/s/files/1/0970/3971/2565/files/Menu_mobile_3.png?v=1762207220'
+-%}
+
+{%- capture chevron -%}
+<svg class="mmobile__chevron" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l4 5-4 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+{%- endcapture -%}
+
+{%- comment -%} Localiza links por handle {%- endcomment -%}
+{%- liquid
+  assign link_sofa = blank
+  assign link_buggy = blank
+  assign link_arcos = blank
+  assign link_quienes = blank
+  assign link_tech = blank
+  assign link_home = blank
+
+  for link in products_menu.links
+    assign h = link.title | handle | strip
+    unless h contains 'kids'
+      if link_sofa == blank
+        if h contains 'sofa' or h contains 'sof' or h contains 'poltrona' or h contains 'producto' or h contains 'produtos' or h contains 'produto'
+          assign link_sofa = link
+        endif
+      endif
+      if link_buggy == blank
+        if h contains 'buggy'
+          assign link_buggy = link
+        endif
+      endif
+      if link_arcos == blank
+        if h contains 'set-de-arcos' or h contains 'set-arcos' or h contains 'set-de-arco' or h contains 'set-arco' or h contains 'set-arcos-'
+          assign link_arcos = link
+        elsif h contains 'set' and h contains 'arcos'
+          assign link_arcos = link
+        elsif h contains 'arcos' or h contains 'arco'
+          assign link_arcos = link
+        endif
+      endif
+      if link_quienes == blank
+        if h contains 'quienes' or h contains 'quien' or h contains 'quem-somos'
+          assign link_quienes = link
+        endif
+      endif
+      if link_tech == blank
+        if h contains 'growtech' or h contains 'tecnologia' or h contains 'tecnología' or h contains 'technology'
+          assign link_tech = link
+        endif
+      endif
+      if link_home == blank
+        if h contains 'inicio' or h == 'home' or h == 'inicio-home'
+          assign link_home = link
+        endif
+      endif
+    endunless
+  endfor
+
+  assign buggy_url_final = routes.root_url
+  if link_buggy != blank
+    assign buggy_url_final = link_buggy.url
+  elsif buggy_url != blank
+    assign buggy_url_final = buggy_url
+  endif
+
+  assign arcos_url_final = routes.root_url
+  if link_arcos != blank
+    assign arcos_url_final = link_arcos.url
+  elsif arcos_url != blank
+    assign arcos_url_final = arcos_url
+  endif
+-%}
+
+<div class="mmobile">
+  {%- if products_menu and products_menu.links.size > 0 -%}
+    <ul class="mmobile__list" role="list">
+      {%- comment -%} Orden fijo {%- endcomment -%}
+
+      {%- if link_sofa != blank -%}
+        <li class="mmobile__item mmobile__item--productos mmobile__item--sofas mmobile__item--lg" data-handle="{{ link_sofa.title | handle }}">
+          <a class="mmobile__link" href="https://ks5ch0-np.myshopify.com/products/sofa-playroom?variant=51454869995829">
+            <div class="mmobile__thumb">
+              {%- if sofa_src != '' -%}
+                <img src="{{ sofa_src }}" class="mmobile__img" alt="Sofá Buggy" loading="lazy">
+              {%- else -%}
+                <span aria-hidden="true"></span>
+              {%- endif -%}
+            </div>
+            <!-- Título actualizado: Sofá Playground → Sofá Buggy -->
+            <div class="mmobile__text"><span class="mmobile__title">Sofá Buggy</span></div>
+            {{ chevron }}
+          </a>
+        </li>
+      {%- endif -%}
+
+      <li class="mmobile__item mmobile__item--productos mmobile__item--lg" data-handle="buggy">
+        <a class="mmobile__link" href="{{ buggy_url_final }}">
+          <div class="mmobile__thumb">
+            {%- if buggy_src != '' -%}
+              <img src="{{ buggy_src }}" class="mmobile__img" alt="Buggy" loading="lazy">
+            {%- else -%}
+              <span aria-hidden="true"></span>
+            {%- endif -%}
+          </div>
+          <!-- Chunk se mantiene tal cual -->
+          <div class="mmobile__text"><span class="mmobile__title">Chunk</span></div>
+          {{ chevron }}
+        </a>
+      </li>
+
+      <li class="mmobile__item mmobile__item--productos mmobile__item--lg" data-handle="set-de-arcos">
+        <a class="mmobile__link" href="{{ arcos_url_final }}">
+          <div class="mmobile__thumb">
+            {%- if arcos_src != '' -%}
+              <img src="{{ arcos_src }}" class="mmobile__img" alt="Set de arcos" loading="lazy">
+            {%- else -%}
+              <span aria-hidden="true"></span>
+            {%- endif -%}
+          </div>
+          <div class="mmobile__text"><span class="mmobile__title">Arcos Mágicos</span></div>
+          {{ chevron }}
+        </a>
+      </li>
+
+      {%- if link_quienes != blank -%}
+        <li class="mmobile__item" data-handle="{{ link_quienes.title | handle }}">
+          <a class="mmobile__link" href="{{ link_quienes.url }}">
+            <div class="mmobile__thumb">
+              {%- if quienes_src != '' -%}
+                <img src="{{ quienes_src }}" class="mmobile__img" alt="{{ link_quienes.title | escape }}" loading="lazy">
+              {%- else -%}
+                <span aria-hidden="true"></span>
+              {%- endif -%}
+            </div>
+            <div class="mmobile__text"><span class="mmobile__title">{{ link_quienes.title }}</span></div>
+            {{ chevron }}
+          </a>
+        </li>
+      {%- endif -%}
+
+      {%- if link_tech != blank -%}
+        <li class="mmobile__item" data-handle="{{ link_tech.title | handle }}">
+          <a class="mmobile__link" href="{{ link_tech.url }}">
+            <div class="mmobile__thumb">
+              {%- if tech_src != '' -%}
+                <img src="{{ tech_src }}" class="mmobile__img" alt="{{ link_tech.title | escape }}" loading="lazy">
+              {%- else -%}
+                <span aria-hidden="true"></span>
+              {%- endif -%}
+            </div>
+            <div class="mmobile__text"><span class="mmobile__title">{{ link_tech.title }}</span></div>
+            {{ chevron }}
+          </a>
+        </li>
+      {%- endif -%}
+
+      {%- if link_home != blank -%}
+        <li class="mmobile__item mmobile__item--inicio" data-handle="{{ link_home.title | handle }}">
+          <a class="mmobile__link" href="{{ link_home.url }}">
+            <div class="mmobile__thumb">
+              <img src="{{ home_src }}" class="mmobile__img" alt="{{ link_home.title | escape }}" loading="lazy">
+            </div>
+            <div class="mmobile__text"><span class="mmobile__title">{{ link_home.title }}</span></div>
+            {{ chevron }}
+          </a>
+        </li>
+      {%- endif -%}
+    </ul>
+  {%- endif -%}
+
+  {%- if sub_menu and sub_menu.links.size > 0 -%}
+    <p class="mmobile__heading">SUBCATEGORIAS</p>
+    <ul class="mmobile__list" role="list">
+      {%- for link in sub_menu.links -%}
+        {%- assign h = link.title | handle | strip -%}
+        {%- assign sub_fixed = '' -%}
+        {%- if h contains 'poltrona' -%}
+          {%- assign sub_fixed = 'https://cdn.shopify.com/s/files/1/0688/2184/4128/files/menu-poltronas.png?v=1757807640' -%}
+        {%- endif -%}
+
+        <li class="mmobile__item" data-handle="{{ h }}">
+          <a class="mmobile__link" href="{{ link.url }}">
+            <div class="mmobile__thumb">
+              {%- if sub_fixed != '' -%}
+                <img src="{{ sub_fixed }}" class="mmobile__img" alt="{{ link.title | escape }}" loading="lazy">
+              {%- else -%}
+                <span aria-hidden="true"></span>
+              {%- endif -%}
+            </div>
+            <div class="mmobile__text"><span class="mmobile__title">{{ link.title }}</span></div>
+            {{ chevron }}
+          </a>
+        </li>
+      {%- endfor -%}
+    </ul>
+  {%- endif -%}
+
+  {%- if extras_menu and extras_menu.links.size > 0 -%}
+    <p class="mmobile__heading">VEJA TAMBÉM</p>
+    <ul class="mmobile__list mmobile__list--icons" role="list">
+      {%- for link in extras_menu.links -%}
+        {%- assign h = link.title | handle | strip -%}
+        {%- unless h contains 'kids' -%}
+          {%- assign displayed_title = link.title -%}
+          {%- if h contains 'producto' or h contains 'produto' or h contains 'produtos' or h contains 'sofa' or h contains 'poltrona' -%}
+            {%- assign displayed_title = 'Sofá Playground' -%}
+          {%- endif -%}
+
+          {%- assign icon_src = '' -%}
+          {%- if h contains 'inicio' -%}
+            {%- assign icon_src = 'https://cdn.shopify.com/s/files/1/0688/2184/4128/files/menu-inicio.png?v=1757807641' -%}
+          {%- elsif h contains 'producto' or h contains 'produto' or h contains 'produtos' or h contains 'sofa' or h contains 'poltrona' -%}
+            {%- assign icon_src = sofa_src -%}
+          {%- elsif h contains 'quienes' or h contains 'quien' or h contains 'quem-somos' -%}
+            {%- assign icon_src = quienes_src -%}
+          {%- elsif h contains 'growtech' or h contains 'tecnologia' or h contains 'tecnología' -%}
+            {%- assign icon_src = tech_src -%}
+          {%- endif -%}
+
+          {%- assign icon_item_class = 'mmobile__item' -%}
+          {%- if h contains 'producto' or h contains 'produto' or h contains 'produtos' or h contains 'sofa' or h contains 'poltrona' -%}
+            {%- assign icon_item_class = icon_item_class | append: ' mmobile__item--productos-icon' -%}
+          {%- endif -%}
+
+          <li class="{{ icon_item_class }}" data-handle="{{ h }}">
+            <a class="mmobile__link" href="{{ link.url }}">
+              <div class="mmobile__thumb mmobile__thumb--icon">
+                {%- if icon_src != '' -%}
+                  <img src="{{ icon_src }}" class="mmobile__icon-img" alt="{{ displayed_title | escape }}" loading="lazy">
+                {%- else -%}
+                  <svg width="var(--mm-ico-base)" height="var(--mm-ico-base)" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                {%- endif -%}
+              </div>
+              <div class="mmobile__text"><span class="mmobile__title">{{ displayed_title }}</span></div>
+              {{ chevron }}
+            </a>
+          </li>
+        {%- endunless -%}
+      {%- endfor -%}
+    </ul>
+  {%- endif -%}
+
+  <div class="mmobile__promo">
+    <div class="mmobile__promo-card">
+      <img src="https://cdn.shopify.com/s/files/1/0970/3971/2565/files/Banner_menu_movil.jpg?v=1763920717" alt="Banner tienda">
+    </div>
+  </div>
+</div>
