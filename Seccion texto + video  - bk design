@@ -1,0 +1,311 @@
+{% comment %}
+  Texto + Video – Minimog 5.5.0
+  - Desktop: GRID 50/50 para alinear el bloque de video independientemente del lado.
+  - Mobile: pila con control de orden y gap independiente.
+  - Video: librería Shopify, YouTube/Vimeo o MP4.
+  - Tipografías con tamaños mobile + pesos configurables.
+{% endcomment %}
+
+{%- liquid
+  assign container_class = section.settings.container
+-%}
+
+<section
+  id="mm-text-video-{{ section.id }}"
+  class="mm-tv mm-tv--{{ section.id }}"
+  style="
+    --mm-tv-gap: {{ section.settings.gap }}px;
+    --mm-tv-gap-m: {{ section.settings.gap_mobile }}px;
+    --mm-tv-radius: {{ section.settings.radius }}px;
+    --mm-tv-pt: {{ section.settings.padding_top }}px;
+    --mm-tv-pb: {{ section.settings.padding_bottom }}px;
+    --mm-tv-title-size: {{ section.settings.title_size }}px;
+    --mm-tv-title-size-m: {{ section.settings.title_size_mobile }}px;
+    --mm-tv-title-weight: {{ section.settings.title_weight }};
+    --mm-tv-subtitle-size: {{ section.settings.subtitle_size }}px;
+    --mm-tv-subtitle-size-m: {{ section.settings.subtitle_size_mobile }}px;
+    --mm-tv-subtitle-weight: {{ section.settings.subtitle_weight }};
+  "
+>
+  <div class="{% if container_class == 'container' %}container{% elsif container_class == 'container-fluid' %}container-fluid{% else %}mm-tv__container{% endif %}">
+    <div class="mm-tv__grid{% if section.settings.layout == 'video_text' %} mm-tv__grid--reversed{% endif %}">
+      <!-- Columna Texto -->
+      <div class="mm-tv__col mm-tv__col--text{% if section.settings.mobile_order == 'video_first' %} mm-tv__col--mobile-last{% endif %}">
+        {% if section.settings.title != blank %}
+          <h2 class="mm-tv__title">{{ section.settings.title }}</h2>
+        {% endif %}
+        {% if section.settings.subtitle != blank %}
+          <div class="mm-tv__subtitle">{{ section.settings.subtitle }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Columna Video -->
+      <div class="mm-tv__col mm-tv__col--media{% if section.settings.mobile_order == 'video_first' %} mm-tv__col--mobile-first{% endif %}">
+        <div class="mm-tv__media" style="aspect-ratio: {{ section.settings.aspect_ratio }};">
+          {%- comment -%} 1) Video de la librería (media picker) {%- endcomment -%}
+          {% if section.settings.video != blank %}
+            {{ section.settings.video
+              | video_tag:
+                autoplay: section.settings.autoplay,
+                loop: section.settings.loop,
+                muted: section.settings.muted,
+                controls: section.settings.controls,
+                playsinline: true,
+                class: 'mm-tv__video-el',
+                image_size: '1024x'
+            }}
+          {%- comment -%} 2) URL YouTube/Vimeo {%- endcomment -%}
+          {% elsif section.settings.video_url != blank %}
+            {% liquid
+              assign provider = section.settings.video_url.type
+              assign id = section.settings.video_url.id
+            %}
+            {% capture yt_autoplay %}{% if section.settings.autoplay %}1{% else %}0{% endif %}{% endcapture %}
+            {% capture yt_muted %}{% if section.settings.muted %}1{% else %}0{% endif %}{% endcapture %}
+            {% capture yt_loop %}{% if section.settings.loop %}1{% else %}0{% endif %}{% endcapture %}
+            {% capture yt_controls %}{% if section.settings.controls %}1{% else %}0{% endif %}{% endcapture %}
+
+            {% if provider == 'youtube' %}
+              <iframe
+                class="mm-tv__iframe"
+                src="https://www.youtube.com/embed/{{ id }}?autoplay={{ yt_autoplay }}&mute={{ yt_muted }}&loop={{ yt_loop }}{% if section.settings.loop %}&playlist={{ id }}{% endif %}&controls={{ yt_controls }}&rel=0&playsinline=1&modestbranding=1"
+                title="{{ section.settings.title | escape }}"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowfullscreen
+                loading="lazy"
+              ></iframe>
+            {% elsif provider == 'vimeo' %}
+              <iframe
+                class="mm-tv__iframe"
+                src="https://player.vimeo.com/video/{{ id }}?autoplay={{ yt_autoplay }}&muted={{ yt_muted }}&loop={{ yt_loop }}{% unless section.settings.controls %}&background=1&controls=0{% endunless %}"
+                title="{{ section.settings.title | escape }}"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowfullscreen
+                loading="lazy"
+              ></iframe>
+            {% endif %}
+          {%- comment -%} 3) MP4 directo {%- endcomment -%}
+          {% elsif section.settings.mp4_url != blank %}
+            <video
+              class="mm-tv__video-el"
+              {% if section.settings.poster != blank %}poster="{{ section.settings.poster | image_url: width: 1440 }}"{% endif %}
+              {% if section.settings.autoplay %}autoplay{% endif %}
+              {% if section.settings.loop %}loop{% endif %}
+              {% if section.settings.muted %}muted{% endif %}
+              {% if section.settings.controls %}controls{% endif %}
+              playsinline
+            >
+              <source src="{{ section.settings.mp4_url }}" type="video/mp4">
+            </video>
+          {% else %}
+            <div class="mm-tv__placeholder">
+              <div class="mm-tv__ph-text">Añade un video en la configuración de la sección.</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ====== Layout / Spacing ====== */
+  #mm-text-video-{{ section.id }} {
+    padding-top: var(--mm-tv-pt);
+    padding-bottom: var(--mm-tv-pb);
+  }
+  #mm-text-video-{{ section.id }} .mm-tv__container { width: 100%; padding-left: 20px; padding-right: 20px; }
+
+  /* Desktop: GRID 50/50 para alinear el bloque de video en todas las secciones */
+  @media (min-width: 992px) {
+    #mm-text-video-{{ section.id }} .mm-tv__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* 50 / 50 fijo */
+      grid-template-areas: "text media";
+      align-items: center;
+      gap: var(--mm-tv-gap);
+    }
+    #mm-text-video-{{ section.id }} .mm-tv__grid.mm-tv__grid--reversed {
+      grid-template-areas: "media text"; /* invertimos sin cambiar proporción */
+    }
+    #mm-text-video-{{ section.id }} .mm-tv__col--text { grid-area: text; }
+    #mm-text-video-{{ section.id }} .mm-tv__col--media { grid-area: media; }
+  }
+
+  /* Mobile: pila con control de orden y gap independiente */
+  @media (max-width: 991px) {
+    #mm-text-video-{{ section.id }} .mm-tv__grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--mm-tv-gap-m);
+    }
+    #mm-text-video-{{ section.id }} .mm-tv__col { width: 100%; }
+    #mm-text-video-{{ section.id }} .mm-tv__col--mobile-first { order: -1; }
+    #mm-text-video-{{ section.id }} .mm-tv__col--mobile-last { order: 1; }
+  }
+
+  /* ====== Tipografía ====== */
+  #mm-text-video-{{ section.id }} .mm-tv__col--text { max-width: 720px; }
+  #mm-text-video-{{ section.id }} .mm-tv__title {
+    margin: 0 0 16px 0;
+    font-weight: var(--mm-tv-title-weight);
+    font-size: var(--mm-tv-title-size);
+    line-height: 1.1;
+    letter-spacing: -0.2px;
+  }
+  #mm-text-video-{{ section.id }} .mm-tv__subtitle {
+    margin-top: 12px;
+    color: rgba(0,0,0,.75);
+    font-weight: var(--mm-tv-subtitle-weight);
+    font-size: var(--mm-tv-subtitle-size);
+    line-height: 1.6;
+  }
+
+  /* ====== Media ====== */
+  #mm-text-video-{{ section.id }} .mm-tv__media {
+    width: 100%;
+    border-radius: var(--mm-tv-radius);
+    overflow: hidden;
+    position: relative;
+  }
+  #mm-text-video-{{ section.id }} .mm-tv__video-el,
+  #mm-text-video-{{ section.id }} .mm-tv__iframe {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    border: 0;
+    background: #000;
+  }
+  #mm-text-video-{{ section.id }} .mm-tv__placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 360px;
+    background: #f2f2f2;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--mm-tv-radius);
+  }
+  #mm-text-video-{{ section.id }} .mm-tv__ph-text { font-size: 14px; color: #6b6b6b; }
+
+  /* ====== Responsive font sizes ====== */
+  @media (max-width: 991px) {
+    #mm-text-video-{{ section.id }} .mm-tv__title { font-size: var(--mm-tv-title-size-m); }
+    #mm-text-video-{{ section.id }} .mm-tv__subtitle { font-size: var(--mm-tv-subtitle-size-m); }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Texto + Video (Minimog)",
+  "tag": "section",
+  "class": "mm-text-video",
+  "settings": [
+    {
+      "type": "select",
+      "id": "container",
+      "label": "Ancho del contenedor",
+      "options": [
+        { "label": "container (Minimog)", "value": "container" },
+        { "label": "container-fluid (Minimog)", "value": "container-fluid" },
+        { "label": "Ancho completo (full-bleed)", "value": "full" }
+      ],
+      "default": "container"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Orden en desktop",
+      "options": [
+        { "label": "Texto | Video", "value": "text_video" },
+        { "label": "Video | Texto", "value": "video_text" }
+      ],
+      "default": "text_video"
+    },
+    {
+      "type": "select",
+      "id": "mobile_order",
+      "label": "Orden en móvil",
+      "options": [
+        { "label": "Texto primero", "value": "text_first" },
+        { "label": "Video primero", "value": "video_first" }
+      ],
+      "default": "text_first"
+    },
+
+    { "type": "text", "id": "title", "label": "Título", "default": "Comodidad desde todos los ángulos" },
+    { "type": "richtext", "id": "subtitle", "label": "Descripción", "default": "<p>Gracias al respaldo en ángulo perfecto y los apoyabrazos acolchados, nunca te faltarán posiciones cómodas para descansar.</p>" },
+
+    { "type": "range", "id": "title_size", "min": 24, "max": 72, "step": 1, "unit": "px", "label": "Tamaño título (desktop)", "default": 56 },
+    { "type": "range", "id": "title_size_mobile", "min": 16, "max": 56, "step": 1, "unit": "px", "label": "Tamaño título (mobile)", "default": 32 },
+    {
+      "type": "select",
+      "id": "title_weight",
+      "label": "Peso (font-weight) título",
+      "options": [
+        { "label": "300", "value": "300" },
+        { "label": "400", "value": "400" },
+        { "label": "500", "value": "500" },
+        { "label": "600", "value": "600" },
+        { "label": "700", "value": "700" },
+        { "label": "800", "value": "800" },
+        { "label": "900", "value": "900" }
+      ],
+      "default": "700"
+    },
+
+    { "type": "range", "id": "subtitle_size", "min": 12, "max": 28, "step": 1, "unit": "px", "label": "Tamaño descripción (desktop)", "default": 18 },
+    { "type": "range", "id": "subtitle_size_mobile", "min": 12, "max": 24, "step": 1, "unit": "px", "label": "Tamaño descripción (mobile)", "default": 16 },
+    {
+      "type": "select",
+      "id": "subtitle_weight",
+      "label": "Peso (font-weight) descripción",
+      "options": [
+        { "label": "300", "value": "300" },
+        { "label": "400", "value": "400" },
+        { "label": "500", "value": "500" },
+        { "label": "600", "value": "600" },
+        { "label": "700", "value": "700" }
+      ],
+      "default": "400"
+    },
+
+    { "type": "range", "id": "text_max_width", "min": 360, "max": 900, "step": 10, "unit": "px", "label": "Ancho máx. del texto", "default": 700 },
+
+    { "type": "header", "content": "Fuente de video" },
+    { "type": "video", "id": "video", "label": "Video (librería)" },
+    {
+      "type": "video_url",
+      "id": "video_url",
+      "label": "YouTube/Vimeo (alternativa)",
+      "accept": ["youtube", "vimeo"]
+    },
+    { "type": "url", "id": "mp4_url", "label": "MP4 directo (alternativa)", "info": "URL completa a un archivo .mp4" },
+    { "type": "image_picker", "id": "poster", "label": "Poster para MP4 (opcional)" },
+
+    { "type": "checkbox", "id": "autoplay", "label": "Autoplay", "default": true },
+    { "type": "checkbox", "id": "muted", "label": "Muted (recomendado para autoplay)", "default": true },
+    { "type": "checkbox", "id": "loop", "label": "Loop", "default": true },
+    { "type": "checkbox", "id": "controls", "label": "Mostrar controles", "default": false },
+
+    {
+      "type": "text",
+      "id": "aspect_ratio",
+      "label": "Aspect ratio (CSS)",
+      "info": "Ej.: 16/9, 4/3, 1/1, 3/4",
+      "default": "16/9"
+    },
+
+    { "type": "range", "id": "radius", "min": 0, "max": 48, "step": 1, "unit": "px", "label": "Borde redondeado del video", "default": 24 },
+
+    { "type": "header", "content": "Espaciados" },
+    { "type": "range", "id": "gap", "min": 12, "max": 80, "step": 2, "unit": "px", "label": "Separación entre columnas (desktop)", "default": 40 },
+    { "type": "range", "id": "gap_mobile", "min": 8, "max": 64, "step": 2, "unit": "px", "label": "Separación entre columnas (mobile)", "default": 24 },
+
+    { "type": "range", "id": "padding_top", "min": 0, "max": 160, "step": 4, "unit": "px", "label": "Padding superior", "default": 80 },
+    { "type": "range", "id": "padding_bottom", "min": 0, "max": 160, "step": 4, "unit": "px", "label": "Padding inferior", "default": 80 }
+  ],
+  "presets": [
+    { "name": "Texto + Video (Minimog)", "category": "Secciones personalizadas" }
+  ]
+}
+{% endschema %}
