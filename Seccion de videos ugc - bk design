@@ -1,0 +1,374 @@
+{%- assign _id = 'mm-ugc-videos-' | append: section.id -%}
+{%- assign play_bg_rgb = section.settings.play_bg | color_to_rgb | remove: 'rgb(' | remove: ')' | replace: ' ', '' -%}
+{%- assign play_bg_alpha = section.settings.play_bg_alpha | times: 0.01 -%}
+
+<section id="{{ _id }}" class="mm-ugc-section"
+  style="
+    --pad-top: {{ section.settings.pad_top }}px;
+    --pad-bottom: {{ section.settings.pad_bottom }}px;
+    --gap: {{ section.settings.gap }}px;
+    --radius: {{ section.settings.radius }}px;
+    --play-bg: rgba({{ play_bg_rgb }}, {{ play_bg_alpha }});
+    --play-icon: {{ section.settings.play_icon }};
+    --title: #000;
+
+    /* ===== AJUSTA AQUÍ EL TÍTULO EN MOBILE ===== */
+    --title-mobile: 28px;       /* tamaño en mobile */
+    --title-mobile-lh: 1.15;    /* line-height en mobile */
+  "
+  data-section-id="{{ section.id }}"
+>
+  <div class="{% if section.settings.full_width %}container-fluid{% else %}container{% endif %} mm-ugc-container">
+    {%- if section.settings.heading != blank -%}
+      <h2 class="ugc-title">{{ section.settings.heading }}</h2>
+    {%- endif -%}
+
+    <div class="ugc-grid">
+      {%- for block in section.blocks -%}
+        {%- assign video_src = '' -%}
+        {%- if block.settings.video != blank -%}
+          {%- for s in block.settings.video.sources -%}
+            {%- if s.format == 'mp4' -%}
+              {%- assign video_src = s.url -%}
+              {%- break -%}
+            {%- endif -%}
+          {%- endfor -%}
+        {%- endif -%}
+        {%- if video_src == '' and block.settings.video_url != blank -%}
+          {%- assign video_src = block.settings.video_url -%}
+        {%- endif -%}
+        {%- if video_src != '' -%}
+          <figure class="vid-card" {{ block.shopify_attributes }}>
+            <div class="vid-wrap">
+              <video src="{{ video_src | escape }}" playsinline webkit-playsinline preload="metadata" muted></video>
+              <button class="play-btn" aria-label="Reproducir" aria-pressed="false"></button>
+            </div>
+          </figure>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+
+    <div class="ugc-scrollbar" aria-hidden="true">
+      <span class="ugc-scrollbar__thumb"></span>
+    </div>
+  </div>
+
+  <style>
+    /* Wrapper (hereda tipografía del tema) */
+    #{{ _id }}{
+      padding-top:var(--pad-top);
+      padding-bottom:var(--pad-bottom);
+      background:#fff;
+    }
+
+    /* Título (desktop) */
+    #{{ _id }} .ugc-title{
+      margin:0 0 36px;
+      text-align:center;
+      color:var(--title);
+      font-weight:400;
+      line-height:1.12;
+      font-size:36px;
+    }
+
+    /* Grid desktop/tablet */
+    #{{ _id }} .ugc-grid{
+      display:grid;
+      gap:var(--gap);
+      grid-template-columns: repeat(5, minmax(240px, 1fr));
+    }
+    @media (max-width: 1400px){
+      #{{ _id }} .ugc-grid{ grid-template-columns: repeat(4, minmax(230px, 1fr)); }
+    }
+    @media (max-width: 1024px){
+      #{{ _id }} .ugc-grid{ grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+    }
+    @media (max-width: 700px){
+      #{{ _id }} .ugc-grid{ grid-template-columns: repeat(2, minmax(200px, 1fr)); }
+    }
+
+    /* Tarjeta vídeo 9:16 */
+    #{{ _id }} .vid-card{ margin:0; }
+    #{{ _id }} .vid-wrap{
+      position:relative;
+      width:100%;
+      aspect-ratio:9/16;
+      border-radius:var(--radius);
+      overflow:hidden;
+      background:#000;
+
+      /* ===== Fix bordes redondeados en iOS/Safari y algunos Android ===== */
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
+      clip-path: inset(0 round var(--radius));
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+    #{{ _id }} video{
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; display:block; background:#000;
+
+      /* Heredar radio también en el propio <video> */
+      border-radius: inherit;
+    }
+
+    /* Botón Play */
+    #{{ _id }} .play-btn{
+      position:absolute; inset:0; margin:auto;
+      width:78px; height:78px; border-radius:50%; border:0;
+      background:var(--play-bg);
+      display:grid; place-items:center;
+      cursor:pointer;
+      transition:transform .15s ease, background .15s ease;
+      z-index:2;
+    }
+    #{{ _id }} .play-btn::before{
+      content:''; width:0; height:0;
+      border-left:22px solid var(--play-icon);
+      border-top:14px solid transparent; border-bottom:14px solid transparent;
+      margin-left:4px;
+    }
+    #{{ _id }} .vid-wrap.is-playing .play-btn{ display:none; }
+
+    /* Mobile */
+    @media (max-width: 749px){
+      #{{ _id }} .ugc-grid{
+        display:flex;
+        gap:16px;
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+        scroll-snap-type:x mandatory;
+
+        margin-left:-16px;
+        margin-right:-16px;
+        padding-left:16px;
+        padding-right:16px;
+
+        scrollbar-width:none;
+      }
+      #{{ _id }} .ugc-grid::-webkit-scrollbar{ display:none; }
+
+      #{{ _id }} .vid-card{
+        flex:0 0 auto;
+        width:{{ section.settings.mobile_card_width }}px;
+        scroll-snap-align:start;
+      }
+
+      /* Límite de ítems en mobile */
+      #{{ _id }} .ugc-grid > .vid-card:nth-child(n+{{ section.settings.mobile_max_items | plus: 1 }}){ display:none !important; }
+
+      /* Barra indicadora */
+      #{{ _id }} .ugc-scrollbar{
+        position:relative;
+        height:4px;
+        background:#e5e7eb;
+        border-radius:999px;
+        margin-top:10px;
+        opacity:.8;
+      }
+      #{{ _id }} .ugc-scrollbar__thumb{
+        position:absolute; top:0; left:0; height:100%;
+        background:#9ca3af; border-radius:inherit;
+        width:30%;
+      }
+
+      /* Título móvil */
+      #{{ _id }} h2.ugc-title{
+        font-size: 25px !important;
+        line-height: var(--title-mobile-lh) !important;
+      }
+    }
+  </style>
+
+  <script>
+  (function(){
+    var root  = document.getElementById('{{ _id }}'); if(!root) return;
+    var grid  = root.querySelector('.ugc-grid');
+    var thumb = root.querySelector('.ugc-scrollbar__thumb');
+    var wraps = Array.from(root.querySelectorAll('.vid-wrap'));
+    var videos = wraps.map(function(w){ return w.querySelector('video'); });
+
+    var isMobile = window.matchMedia('(max-width: 749px)').matches;
+
+    function primeFirstFrame(v){
+      if (!v || v._primed) return;
+      v._primed = true;
+      v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
+      v.muted = true; v.setAttribute('muted','');
+      v.preload = 'auto';
+
+      var stopped = false;
+      var stopAtFirst = function(){
+        if (stopped) return;
+        stopped = true;
+        try { v.pause(); } catch(e){}
+        try { if (v.currentTime < 0.1) v.currentTime = 0.05; } catch(e){}
+        v.removeEventListener('timeupdate', stopAtFirst);
+        v.removeAttribute('autoplay');
+        v._stopAtFirst = null;
+      };
+      v._stopAtFirst = stopAtFirst;
+      v.addEventListener('timeupdate', stopAtFirst);
+
+      v.setAttribute('autoplay','');
+      var p = v.play();
+      if (p && p.catch) p.catch(function(){});
+    }
+
+    function clearPrimer(v){
+      if (!v) return;
+      if (v._stopAtFirst){
+        v.removeEventListener('timeupdate', v._stopAtFirst);
+        v._stopAtFirst = null;
+      }
+      v.removeAttribute('autoplay');
+    }
+
+    if (isMobile && 'IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if (entry.isIntersecting){
+            primeFirstFrame(entry.target.querySelector('video'));
+            io.unobserve(entry.target);
+          }
+        });
+      }, { root:null, rootMargin:'120px', threshold:0.15 });
+      wraps.forEach(function(w){ io.observe(w); });
+    } else if (isMobile){
+      videos.slice(0,2).forEach(primeFirstFrame);
+    } else {
+      videos.forEach(function(v){ if(v){ v.removeAttribute('autoplay'); try{ v.pause(); }catch(e){} }});
+    }
+
+    function pauseOthers(except){
+      videos.forEach(function(ov){
+        if (!ov) return;
+        if (ov !== except){
+          ov.pause();
+          var w = ov.closest('.vid-wrap');
+          if (w) w.classList.remove('is-playing');
+          var b = w ? w.querySelector('.play-btn') : null;
+          if (b){ b.setAttribute('aria-pressed','false'); b.setAttribute('aria-label','Reproducir'); }
+        }
+      });
+    }
+
+    wraps.forEach(function(wrap){
+      var v = wrap.querySelector('video');
+      var btn = wrap.querySelector('.play-btn');
+      if (!v || !btn) return;
+
+      function startPlayWithAudio(){
+        clearPrimer(v);
+        pauseOthers(v);
+        v.removeAttribute('muted'); v.muted = false;
+        var p = v.play();
+        if (p && p.then){
+          p.then(function(){
+            wrap.classList.add('is-playing');
+            btn.setAttribute('aria-pressed','true');
+            btn.setAttribute('aria-label','Pausar');
+          }).catch(function(){
+            wrap.classList.remove('is-playing');
+            btn.setAttribute('aria-pressed','false');
+            btn.setAttribute('aria-label','Reproducir');
+          });
+        }else{
+          wrap.classList.add('is-playing');
+          btn.setAttribute('aria-pressed','true');
+          btn.setAttribute('aria-label','Pausar');
+        }
+      }
+
+      function toggle(){
+        if (v.paused){ startPlayWithAudio(); }
+        else {
+          v.pause();
+          wrap.classList.remove('is-playing');
+          btn.setAttribute('aria-pressed','false');
+          btn.setAttribute('aria-label','Reproducir');
+        }
+      }
+
+      btn.addEventListener('click', toggle, { passive:true });
+      v.addEventListener('click', toggle, { passive:true });
+
+      v.addEventListener('play', function(){
+        pauseOthers(v);
+        wrap.classList.add('is-playing');
+        btn.setAttribute('aria-pressed','true');
+        btn.setAttribute('aria-label','Pausar');
+      });
+      v.addEventListener('ended', function(){
+        wrap.classList.remove('is-playing');
+        try { v.muted = true; v.setAttribute('muted',''); v.currentTime = 0.05; } catch(e){ }
+        btn.setAttribute('aria-pressed','false');
+        btn.setAttribute('aria-label','Reproducir');
+      });
+      v.addEventListener('pause', function(){
+        if (v.currentTime <= 0.08){ wrap.classList.remove('is-playing'); }
+      });
+    });
+
+    function updateThumb(){
+      var mobile = window.matchMedia('(max-width: 749px)').matches;
+      if(!mobile || !grid || !thumb){ return; }
+      var max = grid.scrollWidth - grid.clientWidth;
+      var ratio = max > 0 ? (grid.scrollLeft / max) : 0;
+      var widthPct = Math.max(15, (grid.clientWidth / grid.scrollWidth) * 100);
+      var leftPct  = ratio * (100 - widthPct);
+      thumb.style.width = widthPct + '%';
+      thumb.style.left  = leftPct + '%';
+    }
+    if(grid){
+      grid.addEventListener('scroll', updateThumb, {passive:true});
+      window.addEventListener('resize', updateThumb);
+      setTimeout(updateThumb, 0);
+    }
+
+    document.addEventListener('shopify:section:load', function(e){
+      if(e && e.detail && e.detail.sectionId === '{{ section.id }}'){ updateThumb(); }
+    });
+  })();
+  </script>
+</section>
+
+{% schema %}
+{
+  "name": "UGC Videos (Minimog)",
+  "tag": "section",
+  "class": "mm-ugc mm-ugc--videos",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Título", "default": "La gente y su Boxi" },
+
+    { "type": "checkbox", "id": "full_width", "label": "Ancho completo (container-fluid)", "default": false },
+
+    { "type": "range", "id": "pad_top", "label": "Padding superior (px)", "min": 0, "max": 160, "step": 4, "default": 36 },
+    { "type": "range", "id": "pad_bottom", "label": "Padding inferior (px)", "min": 0, "max": 160, "step": 4, "default": 36 },
+
+    { "type": "range", "id": "gap", "label": "Separación entre tarjetas (px)", "min": 8, "max": 48, "step": 2, "default": 36 },
+    { "type": "range", "id": "radius", "label": "Radio de borde (px)", "min": 0, "max": 36, "step": 2, "default": 18 },
+
+    { "type": "color", "id": "play_bg", "label": "Fondo botón Play", "default": "#000000" },
+    { "type": "range", "id": "play_bg_alpha", "label": "Opacidad fondo Play (%)", "min": 0, "max": 100, "step": 1, "default": 55 },
+    { "type": "color", "id": "play_icon", "label": "Color icono Play", "default": "#ffffff" },
+
+    { "type": "range", "id": "mobile_card_width", "label": "Ancho tarjeta en mobile (px)", "min": 200, "max": 360, "step": 10, "default": 260 },
+    { "type": "range", "id": "mobile_max_items", "label": "Máximo de tarjetas visibles en mobile", "min": 1, "max": 12, "step": 1, "default": 4 }
+  ],
+  "blocks": [
+    {
+      "type": "ugc_video",
+      "name": "Vídeo",
+      "settings": [
+        { "type": "video", "id": "video", "label": "Archivo de vídeo (.mp4 en Shopify)" },
+        { "type": "url", "id": "video_url", "label": "URL directa .mp4 (opcional)", "info": "Se usará si no se selecciona archivo de vídeo." }
+      ]
+    }
+  ],
+  "max_blocks": 12,
+  "presets": [
+    { "name": "UGC Videos (Minimog)", "blocks": [ { "type": "ugc_video" }, { "type": "ugc_video" }, { "type": "ugc_video" } ] }
+  ]
+}
+{% endschema %}
