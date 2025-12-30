@@ -1,0 +1,252 @@
+{% liquid
+  assign container = section.settings.container
+  if container == 'w-full'
+    assign container = 'container-full'
+  endif
+%}
+
+{% if section.settings.show_announcement %}
+  {% if section.settings.homepage_only == false or request.page_type == 'index' %}
+    <section
+      id="announcement-{{ section.id }}"
+      class="announcement-ticker m-color-{{ section.settings.color_scheme }} {% if section.settings.show_divider %}border-b{% endif %} {% if section.settings.direction == 'right' %}dir-right{% else %}dir-left{% endif %}"
+      style="--ticker-height:{{ section.settings.bar_height }}px; --item-gap:{{ section.settings.item_gap }}px; --dot-size:{{ section.settings.dot_size }}px;"
+    >
+      <div class="{{ container }}">
+        <div class="ticker-viewport" data-section-id="{{ section.id }}">
+          <div class="ticker-track">
+            {%- capture ticker_group -%}
+              <div class="ticker-group" aria-hidden="false">
+                {%- for block in section.blocks -%}
+                  <div class="ticker-item" {{ block.shopify_attributes }}>
+                    {%- if block.settings.message_link -%}
+                      <a href="{{ block.settings.message_link }}" class="ticker-link">
+                        {{ block.settings.message | replace: '<strong>', '<strong style="font-weight:bold;">' }}
+                      </a>
+                    {%- else -%}
+                      <span class="ticker-text">
+                        {{ block.settings.message | replace: '<strong>', '<strong style="font-weight:bold;">' }}
+                      </span>
+                    {%- endif -%}
+                  </div>
+                  <span class="ticker-sep" aria-hidden="true"><i></i></span>
+                {%- endfor -%}
+              </div>
+            {%- endcapture -%}
+
+            {{ ticker_group }}
+            {{ ticker_group | replace: 'aria-hidden="false"', 'aria-hidden="true"' }}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <style>
+      /* quita padding del wrapper SÓLO aquí para que salga desde el borde */
+      #announcement-{{ section.id }} .container,
+      #announcement-{{ section.id }} .container-full { padding-left:0; padding-right:0; }
+
+      #announcement-{{ section.id }}{ overflow:hidden; }
+      #announcement-{{ section.id }} .ticker-viewport{ position:relative; height:var(--ticker-height); }
+
+      #announcement-{{ section.id }} .ticker-track{
+        display:flex; align-items:center; justify-content:flex-start;
+        white-space:nowrap; height:var(--ticker-height);
+        will-change: transform;
+        transform: translate3d(0,0,0);
+      }
+      #announcement-{{ section.id }} .ticker-group{ display:flex; align-items:center; height:var(--ticker-height); }
+
+      #announcement-{{ section.id }} .ticker-item{
+        display:inline-flex; align-items:center; height:var(--ticker-height);
+        font-size:14px; font-weight:700; line-height:var(--ticker-height); white-space:nowrap;
+      }
+      #announcement-{{ section.id }} .ticker-link,
+      #announcement-{{ section.id }} .ticker-text{
+        display:inline-flex; align-items:center; gap:8px; text-decoration:none;
+      }
+      #announcement-{{ section.id }} img{ height:18px; width:auto; }
+
+      /* separador como “spacer” con punto centrado */
+      #announcement-{{ section.id }} .ticker-sep{
+        display:inline-flex; align-items:center; justify-content:center;
+        padding:0 var(--item-gap); height:var(--ticker-height);
+        flex:0 0 auto; line-height:0;
+      }
+      #announcement-{{ section.id }} .ticker-sep > i{
+        display:block; width:var(--dot-size); height:var(--dot-size);
+        border-radius:50%; background: currentColor;
+      }
+    </style>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        const root     = document.getElementById('announcement-{{ section.id }}');
+        const viewport = root?.querySelector('.ticker-viewport');
+        const track    = viewport?.querySelector('.ticker-track');
+        if(!viewport || !track) return;
+
+        const DIR_RIGHT = root.classList.contains('dir-right');
+        const SPEED     = {{ section.settings.scroll_speed | default: 60 }}; // px/seg
+
+        const firstGroup = () => track.querySelector('.ticker-group');
+        const groups     = () => track.querySelectorAll('.ticker-group');
+
+        let groupW = 0;       // ancho exacto de 1 grupo
+        let phase  = 0;       // distancia recorrida total (px)
+        let rafId  = null;
+        let last   = 0;
+
+        function ensureCopies(viewW){
+          // cubrir el viewport con holgura + 2 grupos extra
+          const minCopies = Math.max(4, Math.ceil((viewW + groupW) / groupW) + 2);
+          while(groups().length < minCopies){
+            track.insertAdjacentHTML('beforeend',
+              firstGroup().outerHTML.replace('aria-hidden="false"', 'aria-hidden="true"')
+            );
+          }
+        }
+
+        function measure(){
+          // detener loop mientras medimos
+          if(rafId) cancelAnimationFrame(rafId);
+
+          // ancho real (incluye puntos e imágenes)
+          groupW = firstGroup()?.scrollWidth || 0;
+          const viewW = viewport.clientWidth || 0;
+          if(!groupW || !viewW) return false;
+
+          ensureCopies(viewW);
+
+          // reset de fase para arrancar al ras
+          phase = 0;
+          // posicion inicial: si va a la derecha, arrancamos una pasada “antes”
+          const startOffset = DIR_RIGHT ? -groupW : 0;
+          track.style.transform = 'translate3d(' + startOffset + 'px,0,0)';
+
+          // corre loop
+          last = 0;
+          rafId = requestAnimationFrame(loop);
+          return true;
+        }
+
+        function loop(ts){
+          if(!last) last = ts;
+          const dt = (ts - last) / 1000; // s
+          last = ts;
+
+          // avanza fase
+          phase += SPEED * dt;
+
+          // offset normalizado por módulo del ancho del grupo (sin IFs)
+          const cycle = phase % groupW; // [0, groupW)
+          const offset = DIR_RIGHT
+            ? (-groupW + cycle)  // -groupW → 0
+            : (0 - cycle);       // 0 → -groupW
+
+          track.style.transform = 'translate3d(' + offset + 'px,0,0)';
+          rafId = requestAnimationFrame(loop);
+        }
+
+        // —— Robustez: recalcular al cargar imágenes, fuentes y cambios de DOM ——
+        function onAllAssetsReady(cb){
+          const imgs = Array.from(track.querySelectorAll('img'));
+          let pending = imgs.length;
+          if(pending === 0) cb();
+          imgs.forEach(img=>{
+            if(img.complete){ if(--pending===0) cb(); }
+            else{
+              img.addEventListener('load', ()=>{ if(--pending===0) cb(); }, {once:true});
+              img.addEventListener('error',()=>{ if(--pending===0) cb(); }, {once:true});
+            }
+          });
+          if ('fonts' in document) {
+            document.fonts.ready.then(()=> cb());
+          }
+        }
+
+        const ro = new ResizeObserver(()=> measure());
+        ro.observe(viewport);
+        ro.observe(track);
+
+        const mo = new MutationObserver(()=> measure());
+        mo.observe(track, {childList:true, subtree:true, characterData:true});
+
+        function start(){
+          onAllAssetsReady(()=> {
+            if(!measure()){
+              requestAnimationFrame(start);
+            }
+          });
+        }
+
+        start();
+
+        window.addEventListener('resize', ()=>{
+          // pequeño debounce
+          if(rafId) cancelAnimationFrame(rafId);
+          requestAnimationFrame(start);
+        });
+
+        document.addEventListener('shopify:section:load', e=>{
+          if(e.detail && e.detail.sectionId === '{{ section.id }}'){ start(); }
+        });
+        document.addEventListener('shopify:block:select', start);
+        document.addEventListener('shopify:block:deselect', start);
+      });
+    </script>
+  {% endif %}
+{% endif %}
+
+{% schema %}
+{
+  "name": "Ticker anuncio infinito",
+  "enabled_on": { "groups": ["header"] },
+  "settings": [
+    { "type": "checkbox", "id": "show_announcement", "label": "Mostrar anuncio", "default": true },
+    { "type": "checkbox", "id": "homepage_only", "label": "Solo en la home", "default": false },
+    { "type": "checkbox", "id": "show_divider", "label": "Mostrar borde inferior", "default": false },
+
+    { "type": "select", "id": "direction", "label": "Dirección de scroll", "default": "right",
+      "options": [
+        { "label": "Hacia la derecha", "value": "right" },
+        { "label": "Hacia la izquierda", "value": "left" }
+      ]
+    },
+
+    { "type": "range", "id": "scroll_speed", "label": "Velocidad (px/seg)", "min": 10, "max": 300, "step": 5, "default": 60 },
+
+    { "type": "range", "id": "bar_height", "label": "Alto de barra (px)", "min": 32, "max": 80, "step": 2, "default": 52 },
+
+    { "type": "range", "id": "item_gap", "label": "Espacio entre items (px)", "min": 8, "max": 160, "step": 2, "default": 40 },
+    { "type": "range", "id": "dot_size", "label": "Tamaño del punto (px)", "min": 4, "max": 24, "step": 1, "default": 10 },
+
+    { "type": "checkbox", "id": "pause_on_hover", "label": "Pausar al pasar el mouse", "default": true },
+
+    {
+      "type": "select",
+      "id": "container",
+      "label": "Container",
+      "default": "w-full",
+      "options": [
+        { "label": "Full width", "value": "w-full" },
+        { "label": "Boxed", "value": "container" }
+      ]
+    },
+    { "type": "color_scheme", "id": "color_scheme", "label": "Esquema de color" }
+  ],
+  "blocks": [
+    {
+      "type": "item",
+      "name": "Item de anuncio",
+      "settings": [
+        { "type": "textarea", "id": "message", "label": "Mensaje", "default": "<img src='https://cdn-icons-png.flaticon.com/512/2991/2991148.png' alt='envío' style='height:18px;'> <strong>ENVÍOS A TODO CHILE</strong>" },
+        { "type": "url", "id": "message_link", "label": "Link opcional" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Ticker anuncio infinito", "category": "Custom", "blocks": [{ "type": "item" }, { "type": "item" }] }
+  ]
+}
+{% endschema %}
