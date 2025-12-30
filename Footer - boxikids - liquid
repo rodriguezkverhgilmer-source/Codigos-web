@@ -1,0 +1,416 @@
+{% comment %}
+  Footer acordeón (Dawn) — 2 menús (compactado) + Newsletter después de Contáctanos
+  Mobile: Menú 1 sin título y visible; Menú 2 toggle abierto; sin líneas.
+  Newsletter: formulario nativo Shopify (customer + contact[tags]=newsletter).
+{% endcomment %}
+
+<footer
+  id="footer-acc-{{ section.id }}"
+  class="footer-acc bg-scheme"
+  data-footer-acc-mounted="true"
+  style="
+    --logo-w-mobile: {{ section.settings.logo_w_mobile | default: 80 | append: 'px' }};
+    --logo-w-desktop: {{ section.settings.logo_w_desktop | default: 90 | append: 'px' }};
+    --mobile-block-gap: 16px; /* espacio entre bloques en mobile */
+    --desktop-columns-gap: {{ section.settings.desktop_columns_gap | default: 24 | append: 'px' }};
+    --desktop-cn-gap-extra: {{ section.settings.desktop_cn_gap_extra | default: 40 | append: 'px' }}; /* espacio extra Contáctanos ↔ Suscríbete */
+    --payments-img-h: {{ section.settings.payments_img_h | default: 34 | append: 'px' }}; /* alto imagen pagos */
+  "
+>
+  <div class="page-width">
+    <!-- Marca / descripción -->
+    <div class="footer-acc__brand">
+      {% if section.settings.logo != blank %}
+        <a href="{{ routes.root_url }}" class="footer-acc__logo" aria-label="{{ shop.name }}">
+          <img
+            src="{{ section.settings.logo | image_url: width: 320 }}"
+            alt="{{ shop.name }}"
+            loading="lazy"
+            width="{{ section.settings.logo.width }}"
+            height="{{ section.settings.logo.height }}"
+          >
+        </a>
+      {% else %}
+        <h2 class="footer-acc__shopname">{{ shop.name }}</h2>
+      {% endif %}
+
+      {% if section.settings.brand_heading != blank %}
+        <h3 class="footer-acc__heading">{{ section.settings.brand_heading }}</h3>
+      {% endif %}
+
+      {% if section.settings.brand_richtext != blank %}
+        <div class="footer-acc__richtext rte">{{ section.settings.brand_richtext }}</div>
+      {% endif %}
+
+      {% if section.settings.show_social %}
+        <div class="footer-acc__social">
+          {% render 'social-icons', class: 'footer-acc__social-list' %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Menús (solo 2) -->
+    <div class="footer-acc__menus">
+      {%- comment -%} ===== Menú 1 ===== {%- endcomment -%}
+      {% assign m1_handle = section.settings.menu_1 %}
+      {% assign m1 = nil %}
+      {% if m1_handle != blank %}{% assign m1 = linklists[m1_handle] %}{% endif %}
+      {% assign m1_title = section.settings.menu_title_1 %}
+      {% if m1_title == blank and m1 %}{% assign m1_title = m1.title %}{% endif %}
+      {% if m1_title == blank %}{% assign m1_title = 'Sobre nosotros' %}{% endif %}
+
+      <details class="footer-acc__accordion" open>
+        <summary class="footer-acc__summary">
+          <span class="footer-acc__summary-text">{{ m1_title }}</span>
+          <svg class="footer-acc__chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+        </summary>
+        <ul class="footer-acc__list" role="list">
+          {% if m1 and m1.links and m1.links.size > 0 %}
+            {% for link in m1.links %}<li><a href="{{ link.url }}">{{ link.title }}</a></li>{% endfor %}
+          {% endif %}
+        </ul>
+      </details>
+
+      {%- comment -%} ===== Menú 2 ===== {%- endcomment -%}
+      {% assign m2_handle = section.settings.menu_2 %}
+      {% assign m2 = nil %}
+      {% if m2_handle != blank %}{% assign m2 = linklists[m2_handle] %}{% endif %}
+      {% assign m2_title = section.settings.menu_title_2 %}
+      {% if m2_title == blank and m2 %}{% assign m2_title = m2.title %}{% endif %}
+      {% if m2_title == blank %}{% assign m2_title = 'Más información' %}{% endif %}
+
+      <details class="footer-acc__accordion" open>
+        <summary class="footer-acc__summary">
+          <span class="footer-acc__summary-text">{{ m2_title }}</span>
+          <svg class="footer-acc__chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+        </summary>
+        <ul class="footer-acc__list" role="list">
+          {% if m2 and m2.links and m2.links.size > 0 %}
+            {% for link in m2.links %}<li><a href="{{ link.url }}">{{ link.title }}</a></li>{% endfor %}
+          {% endif %}
+        </ul>
+      </details>
+    </div>
+
+    <!-- Contáctanos -->
+    <div class="footer-acc__contact">
+      {% if section.settings.contact_heading != blank %}
+        <h4 class="footer-acc__summary--contact">{{ section.settings.contact_heading }}</h4>
+      {% endif %}
+
+      <div class="footer-acc__contact-block">
+        {% if section.settings.contact_phone != blank %}
+          <p class="footer-acc__contact-item">{{ section.settings.contact_phone }}</p>
+        {% endif %}
+        {% if section.settings.contact_email != blank %}
+          <p class="footer-acc__contact-item"><a href="mailto:{{ section.settings.contact_email }}">{{ section.settings.contact_email }}</a></p>
+        {% endif %}
+
+        <!-- Contáctanos vía WhatsApp (debajo de email) -->
+        <p class="footer-acc__contact-item">
+          <a class="footer-acc__wa-link" href="https://wa.me/56966723191" target="_blank" rel="noopener">
+            Contáctanos vía <span class="footer-acc__wa-word">WhatsApp</span>
+          </a>
+        </p>
+
+        {%- comment -%} Showroom: label en negrita + link sin subrayado por defecto {%- endcomment -%}
+        <p class="footer-acc__contact-item">
+          <strong>Showroom:</strong>
+          <a class="footer-acc__map-link"
+             href="https://www.google.com/maps/place/Huel%C3%A9n+224,+Oficina+C,+7500617+Providencia,+Regi%C3%B3n+Metropolitana,+Chile"
+             target="_blank" rel="noopener noreferrer">
+            Huelén 224, Oficina C, piso 3 - Providencia, Santiago. Chile.
+          </a>
+        </p>
+        <p class="footer-acc__contact-item"><strong>Horario:</strong> Miércoles a Sábado de 10:00 a 18:00.</p>
+
+        {% if section.settings.whatsapp_text != blank and section.settings.whatsapp_link != blank %}
+          <p class="footer-acc__contact-item">
+            {{ section.settings.whatsapp_prefix | default: 'Contáctanos vía' }}
+            <a href="{{ section.settings.whatsapp_link }}" target="_blank" rel="noopener">{{ section.settings.whatsapp_text }}</a>
+          </p>
+        {% endif %}
+        {% if section.settings.showroom_heading != blank %}
+          <p class="footer-acc__contact-strong">{{ section.settings.showroom_heading }}</p>
+        {% endif %}
+        {% if section.settings.showroom_address != blank %}
+          <p class="footer-acc__contact-address">{{ section.settings.showroom_address }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Newsletter (después de Contáctanos) -->
+    {% if section.settings.show_newsletter %}
+    <div class="footer-acc__newsletter">
+      {% if section.settings.newsletter_heading != blank %}
+        <h4 class="footer-acc__newsletter-title"><strong>{{ section.settings.newsletter_heading }}</strong></h4>
+      {% endif %}
+      {% if section.settings.newsletter_text != blank %}
+        <p class="footer-acc__newsletter-text">{{ section.settings.newsletter_text }}</p>
+      {% endif %}
+
+      {% form 'customer', id: 'FooterNewsletter', class: 'footer-acc__newsletter-form' %}
+        <input type="hidden" name="contact[tags]" value="newsletter">
+        <div class="footer-acc__newsletter-field">
+          <input
+            class="footer-acc__newsletter-input"
+            type="email"
+            name="contact[email]"
+            value="{{ form.email }}"
+            required
+            autocomplete="email"
+            placeholder="{{ section.settings.newsletter_placeholder | default: 'Ingresa tu email' }}"
+            aria-label="{{ section.settings.newsletter_placeholder | default: 'Ingresa tu email' }}"
+          >
+          <button class="footer-acc__newsletter-btn" type="submit">
+            {{ section.settings.newsletter_button_label | default: 'Suscribirme' }}
+          </button>
+        </div>
+
+        {% if form.errors %}
+          <div class="footer-acc__newsletter-msg footer-acc__newsletter-msg--error" role="alert">
+            {{ form.errors | default_errors }}
+          </div>
+        {% endif %}
+        {% if form.posted_successfully? %}
+          <p class="footer-acc__newsletter-msg footer-acc__newsletter-msg--success" role="status">
+            {{ section.settings.newsletter_success | default: '¡Gracias por suscribirte!' }}
+          </p>
+        {% endif %}
+      {% endform %}
+
+      {% if section.settings.newsletter_privacy != blank %}
+        <p class="footer-acc__newsletter-privacy">{{ section.settings.newsletter_privacy }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Métodos de pago (imagen fija, SIN título) -->
+    {% if section.settings.show_payments %}
+      <div class="footer-acc__payments">
+        <div class="footer-acc__payments-logos">
+          <img
+            src="https://cdn.shopify.com/s/files/1/0688/2184/4128/files/Iconos_metodos_de_pago.png?v=1760052040"
+            alt="Métodos de pago"
+            class="payment-icon"
+            loading="lazy"
+          >
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Créditos -->
+    <div class="footer-acc__bottom">
+      <small>© {{ 'now' | date: '%Y' }} {{ shop.name }}</small>
+    </div>
+  </div>
+</footer>
+
+{% schema %}
+{
+  "name": "Footer acordeón (2 menús)",
+  "enabled_on": { "groups": ["footer"] },
+  "settings": [
+    { "type": "image_picker", "id": "logo", "label": "Logo" },
+    { "type": "text", "id": "brand_heading", "label": "Título de marca", "default": "Síguenos en redes sociales" },
+    { "type": "richtext", "id": "brand_richtext", "label": "Descripción de la marca (opcional)" },
+    { "type": "checkbox", "id": "show_social", "label": "Mostrar iconos de redes", "default": true },
+
+    { "type": "text", "id": "menu_title_1", "label": "Título menú 1", "default": "Sobre nosotros" },
+    { "type": "link_list", "id": "menu_1", "label": "Menú 1" },
+
+    { "type": "text", "id": "menu_title_2", "label": "Título menú 2", "default": "Más información" },
+    { "type": "link_list", "id": "menu_2", "label": "Menú 2" },
+
+    { "type": "text", "id": "contact_heading", "label": "Encabezado contacto", "default": "Contáctanos" },
+    { "type": "text", "id": "contact_phone", "label": "Teléfono" },
+    { "type": "text", "id": "contact_email", "label": "Email" },
+
+    { "type": "text", "id": "whatsapp_prefix", "label": "Texto previo WhatsApp", "default": "Contáctanos vía" },
+    { "type": "text", "id": "whatsapp_text", "label": "Texto enlace WhatsApp", "default": "WhatsApp" },
+    { "type": "url",  "id": "whatsapp_link", "label": "Link WhatsApp" },
+
+    { "type": "text", "id": "showroom_heading", "label": "Título Showroom", "default": "¡Visita nuestro Show Room!" },
+    { "type": "textarea", "id": "showroom_address", "label": "Dirección Showroom", "default": "Huelén 224, Oficina C - Providencia, Santiago.\nChile." },
+
+    { "type": "checkbox", "id": "show_payments", "label": "Mostrar métodos de pago", "default": true },
+
+    { "type": "range", "id": "logo_w_mobile", "label": "Ancho máximo logo (mobile)", "min": 60, "max": 320, "step": 4, "unit": "px", "default": 80 },
+    { "type": "range", "id": "logo_w_desktop", "label": "Ancho máximo logo (desktop)", "min": 60, "max": 480, "step": 6, "unit": "px", "default": 90 },
+
+    { "type": "checkbox", "id": "show_newsletter", "label": "Mostrar Newsletter", "default": true },
+    { "type": "text", "id": "newsletter_heading", "label": "Título Newsletter", "default": "Suscríbete" },
+    { "type": "text", "id": "newsletter_text", "label": "Mensaje", "default": "¡Sé el primero en conocer nuestros nuevos productos y ofertas exclusivas!" },
+    { "type": "text", "id": "newsletter_placeholder", "label": "Placeholder del email", "default": "Ingresa tu email" },
+    { "type": "text", "id": "newsletter_button_label", "label": "Texto botón", "default": "Suscribirme" },
+    { "type": "text", "id": "newsletter_success", "label": "Mensaje de éxito", "default": "¡Gracias por suscribirte!" },
+    { "type": "textarea", "id": "newsletter_privacy", "label": "Nota legal/privacidad (opcional)" },
+
+    { "type": "range", "id": "desktop_columns_gap", "label": "Espacio entre columnas (desktop)", "min": 8, "max": 64, "step": 2, "unit": "px", "default": 24 },
+    { "type": "range", "id": "desktop_cn_gap_extra", "label": "Espacio extra entre 'Contáctanos' y 'Suscríbete' (desktop)", "min": 0, "max": 64, "step": 2, "unit": "px", "default": 40 },
+
+    { "type": "range", "id": "payments_img_h", "label": "Tamaño imagen métodos de pago (alto, px)", "min": 16, "max": 64, "step": 2, "unit": "px", "default": 34 }
+  ],
+  "presets": [
+    { "name": "Footer acordeón (2 menús)" }
+  ]
+}
+{% endschema %}
+
+{% stylesheet %}
+/* ===== Base tipografía/colores ===== */
+.footer-acc{ font-family: inherit; color:#DBEA76; background:#625DFE; padding:36px 0 16px; font-size:14px; line-height:1.6; font-weight:400; }
+.footer-acc a{text-decoration:none;}
+.footer-acc a:hover,.footer-acc a:focus{text-decoration:underline;opacity:.95;}
+.footer-acc .page-width{display:grid;gap:16px;}
+
+/* Marca */
+.footer-acc__brand{border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:12px;}
+.footer-acc__logo{display:inline-block;margin-bottom:8px;}
+.footer-acc__logo img{height:auto;max-width:var(--logo-w-mobile, 80px);}
+.footer-acc__heading{margin:0 0 6px 0;}
+.footer-acc__richtext{font-size:13px;opacity:.95;margin-bottom:14px;}
+.footer-acc__social{margin-top:6px;}
+.footer-acc__social .footer-acc__social-list,
+.footer-acc__social ul{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+
+/* Menús (estructura) */
+.footer-acc__menus{display:grid;gap:6px;margin-top:4px;}
+.footer-acc__accordion{padding:10px 0;}
+.footer-acc__summary{
+  display:flex;align-items:center;justify-content:space-between;cursor:pointer;list-style:none;
+  font-size:18px;margin-bottom:10px;
+}
+.footer-acc__summary::-webkit-details-marker{display:none;}
+.footer-acc__chev{width:18px;height:18px;transition:transform .2s ease;}
+.footer-acc__accordion[open] .footer-acc__chev{transform:rotate(180deg);}
+.footer-acc__list{padding:0;margin:0;display:none;gap:8px;list-style:none;}
+.footer-acc__accordion[open] .footer-acc__list{display:grid;}
+
+/* Contáctanos */
+.footer-acc__contact{
+  border-top:1px solid rgba(255,255,255,.12);
+  padding-top:12px;
+  display:grid;
+  gap:0;
+}
+.footer-acc__summary--contact{font-size:18px;margin:0 0 8px 0;}
+.footer-acc__contact-block{display:grid;gap:8px;}
+.footer-acc__contact-block > *{margin:0 !important;}
+/* Enlaces de contacto subrayados… */
+.footer-acc__contact a{text-decoration:underline;}
+/* …excepto el link del mapa (sin subrayado por defecto; sí en hover/focus) */
+.footer-acc__contact .footer-acc__map-link{ text-decoration:none; }
+.footer-acc__contact .footer-acc__map-link:hover,
+.footer-acc__contact .footer-acc__map-link:focus{ text-decoration:underline; }
+.footer-acc__contact-strong{font-weight:700;}
+
+/* WhatsApp: solo la palabra "WhatsApp" subrayada por defecto; al hover, todo el texto */
+.footer-acc__contact .footer-acc__wa-link{ text-decoration:none; }
+.footer-acc__contact .footer-acc__wa-link:hover,
+.footer-acc__contact .footer-acc__wa-link:focus{ text-decoration:underline; }
+.footer-acc__wa-word{ text-decoration:underline; }
+
+/* Newsletter (después de Contáctanos) */
+.footer-acc__newsletter{border-top:1px solid rgba(255,255,255,.12);padding-top:12px;display:grid;gap:8px;}
+.footer-acc__newsletter-title{font-size:18px;margin:0 0 6px 0;font-weight:700;}
+.footer-acc__newsletter-title strong{font-weight:700;}
+.footer-acc__newsletter-text{margin:0 0 4px 0;}
+.footer-acc__newsletter-form{display:block;}
+.footer-acc__newsletter-field{display:flex;gap:8px;align-items:stretch;}
+.footer-acc__newsletter-input{
+  flex:1; padding:12px; font-size:14px; border:0; border-radius:10px;
+  background:#FFFFFF; color:#111111;
+}
+.footer-acc__newsletter-btn{
+  padding:12px 16px; font-size:14px; font-weight:700; border:0; border-radius:10px; cursor:pointer;
+  background:#DBEA76; color:#625DFE;
+}
+.footer-acc__newsletter-btn:hover{opacity:.95;}
+.footer-acc__newsletter-msg{margin:6px 0 0 0;font-size:13px;}
+.footer-acc__newsletter-msg--error{color:#FFD6D6;}
+.footer-acc__newsletter-msg--success{color:#D4FFD6;}
+.footer-acc__newsletter-privacy{font-size:12px;opacity:.9;margin:6px 0 0 0;}
+
+/* Pagos (imagen fija con tamaño ajustable y SIN border-radius) */
+.footer-acc__payments{margin-top:8px;}
+.footer-acc__payments-logos{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+#footer-acc-{{ section.id }} .footer-acc__payments-logos .payment-icon{
+  height: var(--payments-img-h, 34px);
+  width: auto;
+  display: block;
+  border-radius: 0px !important; /* sin esquinas redondeadas */
+}
+
+/* Bottom */
+.footer-acc__bottom{
+  border-top:1px solid rgba(255,255,255,.12);
+  margin-top:8px;
+  padding-top:8px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+
+/* ===== Mobile (≤ 989px) ===== */
+@media (max-width: 989px){
+  #footer-acc-{{ section.id }} .page-width{ gap:8px !important; }
+  #footer-acc-{{ section.id }} .footer-acc__brand{ border-bottom:0 !important; padding-bottom:4px !important; }
+
+  #footer-acc-{{ section.id }} .footer-acc__accordion{ border:0 !important; padding:8px 0; }
+  #footer-acc-{{ section.id }} .footer-acc__summary{ margin-bottom:8px; }
+
+  /* Menú 1: ocultar título y mantener lista visible (details está OPEN) */
+  #footer-acc-{{ section.id }} .footer-acc__menus > details.footer-acc__accordion:first-of-type > summary{
+    display:none !important;
+  }
+
+  /* Títulos en negrita en mobile (Más información / Contáctanos) */
+  #footer-acc-{{ section.id }} .footer-acc__summary,
+  #footer-acc-{{ section.id }} .footer-acc__summary .footer-acc__summary-text{
+    font-weight:700 !important;
+  }
+  #footer-acc-{{ section.id }} .footer-acc__summary--contact{ font-weight:700 !important; }
+
+  /* Espacio entre bloques en mobile */
+  #footer-acc-{{ section.id }} .footer-acc__contact{ margin-top: var(--mobile-block-gap, 16px) !important; border-top:0 !important; padding-top:0; }
+  #footer-acc-{{ section.id }} .footer-acc__newsletter{ margin-top: var(--mobile-block-gap, 16px) !important; border-top:0 !important; padding-top:0; }
+  #footer-acc-{{ section.id }} .footer-acc__payments{ margin-top: var(--mobile-block-gap, 16px) !important; }
+}
+
+/* ===== Desktop (≥ 990px) ===== */
+@media (min-width: 990px){
+  .footer-acc .page-width{
+    display:grid;
+    grid-template-columns:1.2fr 1fr 1fr 1fr 1fr; /* marca | menú1 | menú2 | contacto | newsletter */
+    grid-auto-rows:auto;
+    gap: var(--desktop-columns-gap, 24px);
+    align-items:start;
+  }
+
+  .footer-acc__brand{grid-column:1;border-bottom:0;padding-bottom:0;}
+  .footer-acc__menus{grid-column:2 / span 2;display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:0;}
+  .footer-acc__contact{grid-column:4;border-top:0;padding-top:0;margin-top:0;gap:0;}
+
+  /* Espacio extra solo entre Contáctanos y Suscríbete */
+  .footer-acc__newsletter{
+    grid-column:5;
+    border-top:0;padding-top:0;margin-top:0;
+    margin-left: var(--desktop-cn-gap-extra, 40px);
+  }
+
+  .footer-acc__accordion{ padding:0; border:0; }
+  .footer-acc__summary{ pointer-events:none; margin-top:0; margin-bottom:10px; }
+  .footer-acc__chev{ display:none; }
+  .footer-acc__accordion > .footer-acc__list{ display:grid !important; gap:10px; padding:0; }
+
+  .footer-acc details.footer-acc__accordion > summary.footer-acc__summary,
+  .footer-acc details.footer-acc__accordion > summary.footer-acc__summary .footer-acc__summary-text{
+    font-weight:700 !important;
+  }
+  .footer-acc .footer-acc__summary--contact{ margin:0 0 10px 0; font-weight:700 !important; }
+
+  .footer-acc__payments{ grid-column:1; grid-row:2; margin-top:12px; }
+  .footer-acc__bottom{ grid-column:1 / -1; grid-row:3; border-top:1px solid rgba(255,255,255,.12); margin-top:12px; padding-top:10px; }
+
+  .footer-acc__logo img{max-width:var(--logo-w-desktop, 90px);}
+}
+{% endstylesheet %}
