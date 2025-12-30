@@ -1,0 +1,322 @@
+En sections/ crea un archivo llamado:
+
+jdgm-reviews.liquid
+
+
+{% comment %}
+  JDGM Reviews – Solo reviews, estilo actual
+  - Comportamiento un paso (inicio -> final y volver)
+  - Vista inicial con última tarjeta cortada (peek)
+{% endcomment %}
+{% assign jm = shop.metafields.judgeme %}
+{% assign avg = jm.all_reviews_rating | default: 0 | round: 1 %}
+
+<section class="jdgmrev{% if section.settings.full_width == false %} container{% endif %}" data-section-id="{{ section.id }}">
+  <!-- Top -->
+  <div class="jdgmrev__top">
+    <div class="jdgmrev__verified">{{ section.settings.verified_label }}</div>
+    <div class="jdgmrev__score">
+      <div class="jdgmrev__score-num">{{ avg }}/5</div>
+      {%- assign full = avg | floor | plus: 0 -%}
+      <div class="jdgmrev__score-stars" aria-label="{{ avg }} de 5">
+        {% for i in (1..5) %}
+          {% if i <= full %}
+            <svg class="jdgmrev__star" viewBox="0 0 24 24"><path d="M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+          {% else %}
+            <svg class="jdgmrev__star jdgmrev__star--empty" viewBox="0 0 24 24"><path d="M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="jdgmrev__row">
+    <!-- Hero negro con datos reales -->
+    <aside class="jdgmrev__hero">
+      <div class="jdgmrev__hero-in">
+        <h3 class="jdgmrev__hero-title">
+          {{ section.settings.hero_line1 }}<br/>{{ section.settings.hero_line2 }}
+        </h3>
+        <div class="jdgmrev__hero-stars">
+          {% for i in (1..5) %}
+            <svg class="jdgmrev__star jdgmrev__star--solid" viewBox="0 0 24 24"><path d="M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+          {% endfor %}
+        </div>
+        <div class="jdgmrev__hero-meta">
+          <div class="jdgmrev__hero-avg">{{ avg }} average</div>
+          <div class="jdgmrev__hero-count">+{{ jm.all_reviews_count | default: 0 }} reviews</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Carrusel (un paso) -->
+    <div class="jdgmrev__slider">
+      <!-- data-peek: cuánto se asoma la última tarjeta -->
+      <div class="jdgmrev__viewport" data-peek="{{ section.settings.peek | default: 48 }}">
+        <div class="jdgmrev__track">
+          {% for block in section.blocks %}
+            {%- assign stars_num = block.settings.stars | default: 5 | plus: 0 -%}
+            <article class="jdgmrev__card" {{ block.shopify_attributes }}>
+              <div class="jdgmrev__card-stars">
+                {% for i in (1..5) %}
+                  {% if i <= stars_num %}
+                    <svg class="jdgmrev__star jdgmrev__star--solid" viewBox="0 0 24 24"><path d="M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+                  {% else %}
+                    <svg class="jdgmrev__star jdgmrev__star--empty" viewBox="0 0 24 24"><path d="M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              {% if block.settings.title != blank %}
+                <h4 class="jdgmrev__card-title">{{ block.settings.title }}</h4>
+              {% endif %}
+              {% if block.settings.body != blank %}
+                <div class="jdgmrev__card-body">{{ block.settings.body }}</div>
+              {% endif %}
+              {% if block.settings.author != blank %}
+                <div class="jdgmrev__card-author">{{ block.settings.author }}</div>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Controles abajo -->
+      <div class="jdgmrev__controls">
+        <button class="jdgmrev__ctrl jdgmrev__ctrl--prev" type="button" aria-label="Anterior" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24"><path d="M16 4L8 12l8 8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+        <button class="jdgmrev__ctrl jdgmrev__ctrl--next" type="button" aria-label="Siguiente">
+          <svg width="16" height="16" viewBox="0 0 24 24"><path d="M8 4l8 8-8 8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "JDGM Reviews",
+  "class": "jdgm-reviews",
+  "settings": [
+    { "type": "checkbox", "id": "full_width", "label": "Usar ancho completo", "default": false },
+    { "type": "text", "id": "verified_label", "label": "Etiqueta superior", "default": "98% RESEÑAS VERIFICADAS" },
+    { "type": "text", "id": "hero_line1", "label": "Hero Título línea 1", "default": "La calidad y experiencia en" },
+    { "type": "text", "id": "hero_line2", "label": "Hero Título línea 2", "default": "la dictan nuestros clientes" },
+    { "type": "range", "id": "peek", "label": "Peek (px) tarjeta cortada", "min": 24, "max": 96, "step": 2, "default": 48 }
+  ],
+  "blocks": [
+    {
+      "type": "review",
+      "name": "Review",
+      "settings": [
+        { "type": "range", "id": "stars", "label": "Estrellas", "min": 1, "max": 5, "step": 1, "default": 5 },
+        { "type": "text", "id": "title", "label": "Título", "default": "Excelente producto" },
+        { "type": "textarea", "id": "body", "label": "Contenido", "default": "Texto de la reseña..." },
+        { "type": "text", "id": "author", "label": "Autor", "default": "Nombre del cliente" }
+      ]
+    }
+  ],
+  "max_blocks": 12,
+  "presets": [{ "name": "JDGM Reviews" }]
+}
+{% endschema %}
+
+
+
+En assets/ crea dos archivos:
+
+
+
+
+jdgm-reviews.css
+
+
+
+/* ===== JDGM Reviews (un paso) ===== */
+
+.jdgmrev{ --hero-w: 370px; --hero-h: auto; --gap: 16px; --peek: 48px; }
+
+.jdgmrev { padding: 24px 0 32px; }
+.jdgmrev.container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+/* Top */
+.jdgmrev__top { text-align: center; margin-bottom: 10px; }
+.jdgmrev__verified { font-size: 16px; letter-spacing: 2px; color: #7a7a7a; text-transform: uppercase; margin-bottom: 8px; }
+.jdgmrev__score { display: inline-flex; gap: 12px; align-items: center; }
+.jdgmrev__score-num { font-size: 40px; font-weight: 800; color: #111; }
+.jdgmrev__score-stars { display: inline-flex; gap: 6px; transform: translateY(2px); }
+.jdgmrev__star { width: 20px; height: 20px; fill: #111; }
+.jdgmrev__star--empty { fill: #d0d0d0; }
+.jdgmrev__star--solid { fill: #ffd54d; }
+
+/* Fila */
+.jdgmrev__row { display: grid; grid-template-columns: var(--hero-w) 1fr; gap: 16px; align-items: stretch; }
+
+/* Hero negro */
+.jdgmrev__hero { border: 1px solid #000; border-radius: 12px; background: #000; color:#fff; height: var(--hero-h); }
+.jdgmrev__hero-in { padding: 24px; height:100%; box-sizing: border-box; }
+.jdgmrev__hero-title { font-size: 22px; line-height: 30px; margin: 0 0 14px; font-weight:700; letter-spacing:.2px; }
+.jdgmrev__hero-stars { display:flex; gap:8px; margin-bottom:14px; }
+.jdgmrev__hero-meta { display:grid; gap:4px; font-size:16px; }
+
+/* Slider: viewport con "peek" (última tarjeta cortada a la vista) */
+.jdgmrev__slider { position: relative; z-index: 1; }
+.jdgmrev__viewport{
+  position: relative;
+  overflow-x: auto;               /* scroll horizontal real */
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding-right: var(--peek);     /* deja la última tarjeta asomando */
+}
+/* Ocultar barra visual, mantener scroll funcional */
+.jdgmrev__viewport::-webkit-scrollbar { display: none; }
+.jdgmrev__viewport { scrollbar-width: none; }
+
+.jdgmrev__track{
+  display:flex;
+  gap: var(--gap);
+  list-style:none;
+  margin:0;
+  padding: 0 8px;
+}
+
+/* Tarjeta */
+.jdgmrev__card{
+  flex: 0 0 var(--hero-w);
+  width: var(--hero-w);
+  height: var(--hero-h);
+  background:#fff;
+  border:1px solid #dcdcdc;
+  border-radius: 12px;
+  padding:18px;
+  box-sizing: border-box;
+  display:flex; flex-direction:column;
+}
+.jdgmrev__card-stars{ display:flex; gap:8px; align-items:center; }
+.jdgmrev__card-title{ font-weight:700; font-size:18px; color:#111; margin:8px 0 8px; }
+.jdgmrev__card-body{ color:#242424; font-size:15px; line-height:24px; margin-bottom:12px; }
+.jdgmrev__card-author{ color:#7a7a7a; font-size:14px; margin-top:auto; }
+
+/* Controles abajo (centrados y por encima) */
+.jdgmrev__controls{
+  position: relative; z-index: 5;
+  display:flex; justify-content:center; gap:18px; margin-top:18px;
+  pointer-events: auto;
+}
+.jdgmrev__ctrl{
+  width:36px; height:36px; border-radius:50%;
+  border:1px solid #cfcfcf; background:#fff; color:#111; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  box-shadow:0 1px 1px rgba(0,0,0,.04);
+}
+.jdgmrev__ctrl[disabled]{ opacity:.35; cursor:default; }
+
+/* Responsive */
+@media (max-width: 767px){
+  .jdgmrev__row { grid-template-columns: 1fr; gap:16px; }
+  .jdgmrev__hero-in { padding:20px; }
+  .jdgmrev__hero-title{ font-size:22px; line-height:30px; }
+}
+
+
+
+
+
+
+
+jdgm-reviews.js
+
+
+
+// JDGM Reviews – UN PASO: inicio -> última tarjeta completa -> volver
+(function(){
+  document.querySelectorAll('.jdgmrev').forEach(init);
+
+  function init(root){
+    var viewport = root.querySelector('.jdgmrev__viewport');
+    var track    = root.querySelector('.jdgmrev__track');
+    var prevBtn  = root.querySelector('.jdgmrev__ctrl--prev');
+    var nextBtn  = root.querySelector('.jdgmrev__ctrl--next');
+    var hero     = root.querySelector('.jdgmrev__hero');
+    if (!viewport || !track || !prevBtn || !nextBtn || !hero) return;
+
+    // 1) Igualar tarjetas al hero (ancho/alto)
+    function syncHeroSize(){
+      var r = hero.getBoundingClientRect();
+      var w = Math.round(r.width);
+      var h = Math.round(r.height || hero.scrollHeight);
+      root.style.setProperty('--hero-w', w + 'px');
+      root.style.setProperty('--hero-h', (h > 0 ? h : hero.scrollHeight) + 'px');
+    }
+
+    // 2) Peek (cuánto asoma la última tarjeta)
+    (function applyPeek(){
+      var peek = parseInt(viewport.dataset.peek || '48', 10);
+      root.style.setProperty('--peek', peek + 'px');
+    })();
+
+    // 3) Distancia final exacta (con padding del viewport)
+    function getMaxScroll(){
+      var max = viewport.scrollWidth - viewport.clientWidth;
+      return Math.max(0, Math.round(max));
+    }
+
+    // 4) Estados (0 = inicio, 1 = final)
+    var state = { index: 0 };
+
+    function updateButtons(){
+      var max = getMaxScroll();
+      prevBtn.disabled = (state.index === 0);
+      nextBtn.disabled = (state.index === 1 || max === 0);
+    }
+
+    function goStart(){
+      try { viewport.scrollTo({ left: 0, behavior: 'smooth' }); }
+      catch(e){ viewport.scrollLeft = 0; }
+      state.index = 0;
+      setTimeout(updateButtons, 80);
+    }
+
+    function goEnd(){
+      var max = getMaxScroll();
+      if (max <= 0){ state.index = 0; updateButtons(); return; }
+      try { viewport.scrollTo({ left: max, behavior: 'smooth' }); }
+      catch(e){ viewport.scrollLeft = max; }
+      state.index = 1;
+      setTimeout(updateButtons, 80);
+    }
+
+    // 5) Eventos flechas
+    nextBtn.addEventListener('click', function(e){ e.preventDefault(); goEnd(); }, { passive: false });
+    prevBtn.addEventListener('click', function(e){ e.preventDefault(); goStart(); }, { passive: false });
+
+    // 6) Scroll manual: “magnetiza” a inicio/fin y actualiza botones
+    viewport.addEventListener('scroll', function(){
+      var max = getMaxScroll();
+      var atStart = viewport.scrollLeft <= 1;
+      var atEnd   = viewport.scrollLeft >= (max - 1);
+      if (atStart) state.index = 0;
+      else if (atEnd) state.index = 1;
+      else state.index = (viewport.scrollLeft < max / 2) ? 0 : 1;
+      updateButtons();
+    }, { passive: true });
+
+    // 7) Resize / reflow
+    function onResize(){
+      var wasFinal = (state.index === 1);
+      syncHeroSize();
+      if (wasFinal) goEnd(); else goStart();
+    }
+    window.addEventListener('resize', onResize, { passive: true });
+
+    // 8) Init
+    syncHeroSize();
+    viewport.scrollLeft = 0;
+    state.index = 0;
+    updateButtons();
+    setTimeout(onResize, 200);
+    window.addEventListener('load', onResize);
+  }
+})();
+
