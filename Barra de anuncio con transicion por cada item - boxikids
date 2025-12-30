@@ -1,0 +1,375 @@
+{% liquid 
+  assign container = section.settings.container
+  if container == 'w-full'
+    assign container = 'container-full'
+  endif
+
+  assign ctx_type = request.page_type
+  assign ctx_handle = ''
+  if ctx_type == 'collection' and collection
+    assign ctx_handle = collection.handle
+  elsif ctx_type == 'product' and product
+    assign ctx_handle = product.handle
+  elsif ctx_type == 'page' and page
+    assign ctx_handle = page.handle
+  elsif ctx_type == 'blog' and blog
+    assign ctx_handle = blog.handle
+  elsif ctx_type == 'article' and article
+    assign ctx_handle = article.handle
+  endif
+
+  assign active_bg = ''
+  assign active_text = ''
+  assign active_logo_left = ''
+  assign active_logo_left_alt = ''
+  assign active_logo_right = ''
+  assign active_logo_right_alt = ''
+  assign active_logo_h = section.settings.logo_height
+
+  if section.settings.enable_defaults
+    assign active_bg = section.settings.default_bg
+    assign active_text = section.settings.default_text
+    assign active_logo_left = section.settings.default_logo_left
+    assign active_logo_left_alt = section.settings.default_logo_left_alt
+    assign active_logo_right = section.settings.default_logo_right
+    assign active_logo_right_alt = section.settings.default_logo_right_alt
+  endif
+
+  for b in section.blocks
+    if b.type == 'override' and b.settings.enable_override
+      assign match = false
+      assign b_handle = b.settings.handle | strip
+
+      if b.settings.apply_to == 'any'
+        assign match = true
+      elsif b.settings.apply_to == 'index' and ctx_type == 'index'
+        assign match = true
+      elsif b.settings.apply_to == 'collection' and ctx_type == 'collection'
+        if b_handle == '' or ctx_handle == b_handle
+          assign match = true
+        endif
+      elsif b.settings.apply_to == 'product' and ctx_type == 'product'
+        if b_handle == '' or ctx_handle == b_handle
+          assign match = true
+        endif
+      elsif b.settings.apply_to == 'page' and ctx_type == 'page'
+        if b_handle == '' or ctx_handle == b_handle
+          assign match = true
+        endif
+      elsif b.settings.apply_to == 'blog' and ctx_type == 'blog'
+        if b_handle == '' or ctx_handle == b_handle
+          assign match = true
+        endif
+      elsif b.settings.apply_to == 'article' and ctx_type == 'article'
+        if b_handle == '' or ctx_handle == b_handle
+          assign match = true
+        endif
+      elsif b.settings.apply_to == 'cart' and ctx_type == 'cart'
+        assign match = true
+      endif
+
+      if match
+        if b.settings.enable_colors
+          assign active_bg = b.settings.bg
+          assign active_text = b.settings.text
+        endif
+        if b.settings.logo_left != blank
+          assign active_logo_left = b.settings.logo_left
+        endif
+        if b.settings.logo_left_alt != blank
+          assign active_logo_left_alt = b.settings.logo_left_alt
+        endif
+        if b.settings.logo_right != blank
+          assign active_logo_right = b.settings.logo_right
+        endif
+        if b.settings.logo_right_alt != blank
+          assign active_logo_right_alt = b.settings.logo_right_alt
+        endif
+        if b.settings.logo_height_override and b.settings.logo_height_override > 0
+          assign active_logo_h = b.settings.logo_height_override
+        endif
+      endif
+    endif
+  endfor
+%}
+
+{% if section.settings.show_announcement %}
+  {% if section.settings.homepage_only == false or request.page_type == 'index' %}
+    <section
+      id="announcement-{{ section.id }}"
+      class="announcement-bar-section{% unless active_bg != '' or active_text != '' %} color-{{ section.settings.color_scheme }}{% endunless %} {% if section.settings.show_divider %}border-b{% endif %}"
+      {% if active_bg != blank or active_text != blank %}
+        style="{% if active_bg != blank %}background: {{ active_bg }};{% endif %}{% if active_text != blank %} --annc-text: {{ active_text }};{% endif %}"
+      {% endif %}
+    >
+      <div class="{{ container }}">
+        <div class="announcement-slider-{{ section.id }}">
+          <div class="announcement-slides">
+            {% for block in section.blocks %}
+              {% if block.type == 'item' %}
+                {%- liquid
+                  assign item_message = block.settings.message
+                  assign item_link = block.settings.message_link
+
+                  assign item_match = false
+                  if block.settings.item_enable_override
+                    assign i_apply = block.settings.item_apply_to
+                    assign i_handle = block.settings.item_handle | strip
+
+                    if i_apply == 'any'
+                      assign item_match = true
+                    elsif i_apply == 'index' and ctx_type == 'index'
+                      assign item_match = true
+                    elsif i_apply == 'collection' and ctx_type == 'collection'
+                      if i_handle == '' or ctx_handle == i_handle
+                        assign item_match = true
+                      endif
+                    elsif i_apply == 'product' and ctx_type == 'product'
+                      if i_handle == '' or ctx_handle == i_handle
+                        assign item_match = true
+                      endif
+                    elsif i_apply == 'page' and ctx_type == 'page'
+                      if i_handle == '' or ctx_handle == i_handle
+                        assign item_match = true
+                      endif
+                    elsif i_apply == 'blog' and ctx_type == 'blog'
+                      if i_handle == '' or ctx_handle == i_handle
+                        assign item_match = true
+                      endif
+                    elsif i_apply == 'article' and ctx_type == 'article'
+                      if i_handle == '' or ctx_handle == i_handle
+                        assign item_match = true
+                      endif
+                    elsif i_apply == 'cart' and ctx_type == 'cart'
+                      assign item_match = true
+                    endif
+
+                    if item_match
+                      if block.settings.item_message_override != blank
+                        assign item_message = block.settings.item_message_override
+                      endif
+                      if block.settings.item_message_link_override != blank
+                        assign item_link = block.settings.item_message_link_override
+                      endif
+                    endif
+                  endif
+                -%}
+
+                <div class="announcement-slide">
+                  {% if item_link %}
+                    <a href="{{ item_link }}" class="announcement-line">
+                      {% if active_logo_left != blank %}
+                        <img src="{{ active_logo_left }}" alt="{{ active_logo_left_alt | escape }}" class="announcement-logo" style="height: {{ active_logo_h }}px;">
+                      {% endif %}
+                      {{ item_message | replace: '<strong>', '<strong style="font-weight:bold;">' }}
+                      {% if active_logo_right != blank %}
+                        <img src="{{ active_logo_right }}" alt="{{ active_logo_right_alt | escape }}" class="announcement-logo" style="height: {{ active_logo_h }}px;">
+                      {% endif %}
+                    </a>
+                  {% else %}
+                    <div class="announcement-line">
+                      {% if active_logo_left != blank %}
+                        <img src="{{ active_logo_left }}" alt="{{ active_logo_left_alt | escape }}" class="announcement-logo" style="height: {{ active_logo_h }}px;">
+                      {% endif %}
+                      {{ item_message | replace: '<strong>', '<strong style="font-weight:bold;">' }}
+                      {% if active_logo_right != blank %}
+                        <img src="{{ active_logo_right }}" alt="{{ active_logo_right_alt | escape }}" class="announcement-logo" style="height: {{ active_logo_h }}px;">
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <style>
+      .announcement-slider-{{ section.id }} {
+        height: 36px;
+        overflow: hidden;
+        position: relative;
+        will-change: transform;
+      }
+      .announcement-slider-{{ section.id }} .announcement-slides {
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.5s ease-in-out;
+      }
+      .announcement-slider-{{ section.id }} .announcement-slide {
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+        font-size: 12px;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      #announcement-{{ section.id }} .announcement-line{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        color: var(--annc-text, rgb(var(--color-foreground))) !important;
+        text-decoration: none;
+      }
+      #announcement-{{ section.id }} .announcement-line strong{ font-weight: bold; }
+      #announcement-{{ section.id }} .announcement-line a{ color: var(--annc-text, rgb(var(--color-foreground))) !important; }
+
+      #announcement-{{ section.id }} .announcement-logo{
+        width:auto;
+        height: {{ active_logo_h }}px;
+      }
+
+      #announcement-{{ section.id }} .announcement-line img:not(.announcement-logo){
+        height: 14px;
+        width: auto;
+      }
+
+      #announcement-{{ section.id }} img,
+      #announcement-{{ section.id }} picture,
+      #announcement-{{ section.id }} svg,
+      #announcement-{{ section.id }} .media,
+      #announcement-{{ section.id }} .media > img {
+        border-radius: 0 !important;
+        overflow: visible !important;
+      }
+    </style>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        requestAnimationFrame(() => {
+          const container = document.querySelector('.announcement-slider-{{ section.id }} .announcement-slides');
+          const slides = container?.querySelectorAll('.announcement-slide');
+          const interval = {{ section.settings.autorotate_speed | times: 1000 }};
+
+          if (!container || slides.length <= 1) return;
+
+          container.innerHTML += container.innerHTML;
+          const total = slides.length;
+          let current = 0;
+
+          setInterval(() => {
+            current++;
+            container.style.transition = 'transform 0.5s ease-in-out';
+            container.style.transform = `translateY(-${current * 36}px)`;
+
+            if (current === total) {
+              setTimeout(() => {
+                container.style.transition = 'none';
+                container.style.transform = 'translateY(0)';
+                current = 0;
+              }, 500);
+            }
+          }, interval);
+        });
+      });
+    </script>
+  {% endif %}
+{% endif %}
+
+{% schema %}
+{
+  "name": "Announcement Bar",
+  "enabled_on": { "groups": ["header"] },
+  "settings": [
+    { "type": "checkbox", "id": "show_announcement", "label": "Show announcement", "default": true },
+    { "type": "checkbox", "id": "homepage_only", "label": "Only on homepage", "default": false },
+    { "type": "checkbox", "id": "show_divider", "label": "Show bottom border", "default": false },
+    { "type": "range", "id": "autorotate_speed", "label": "Slide interval (seconds)", "min": 2, "max": 10, "step": 1, "default": 5, "unit": "s" },
+    { "type": "select", "id": "container", "label": "Container", "default": "container",
+      "options": [
+        { "label": "Full width", "value": "w-full" },
+        { "label": "Boxed", "value": "container" }
+      ]
+    },
+
+    { "type": "header", "content": "Defaults (Home)" },
+    { "type": "checkbox", "id": "enable_defaults", "label": "Enable default colors/logos on Home", "default": false },
+    { "type": "color", "id": "default_bg", "label": "Default background color", "default": "#ffffff" },
+    { "type": "color", "id": "default_text", "label": "Default text color", "default": "#111111" },
+    { "type": "url", "id": "default_logo_left", "label": "Default left logo URL" },
+    { "type": "text", "id": "default_logo_left_alt", "label": "Default left logo ALT", "default": "announcement logo" },
+    { "type": "url", "id": "default_logo_right", "label": "Default right logo URL" },
+    { "type": "text", "id": "default_logo_right_alt", "label": "Default right logo ALT", "default": "announcement logo right" },
+    { "type": "range", "id": "logo_height", "min": 10, "max": 48, "step": 2, "unit": "px", "label": "Logos height (px)", "default": 20 },
+
+    { "type": "color_scheme", "id": "color_scheme", "label": "Color scheme (fallback)" }
+  ],
+  "blocks": [
+    {
+      "type": "item",
+      "name": "Announcement item",
+      "settings": [
+        { "type": "textarea", "id": "message", "label": "Message", "default": "<strong>ENVÍO GRATIS EN SANTIAGO EN 3 DÍAS 🚚</strong>" },
+        { "type": "url", "id": "message_link", "label": "Optional link" },
+
+        { "type": "header", "content": "Per-page override (optional)" },
+        { "type": "checkbox", "id": "item_enable_override", "label": "Enable message override on specific pages", "default": false },
+        { "type": "select", "id": "item_apply_to", "label": "Apply to",
+          "default": "any",
+          "options": [
+            { "value": "any", "label": "Any page" },
+            { "value": "index", "label": "Home" },
+            { "value": "collection", "label": "Collection" },
+            { "value": "product", "label": "Product" },
+            { "value": "page", "label": "Page" },
+            { "value": "blog", "label": "Blog" },
+            { "value": "article", "label": "Article" },
+            { "value": "cart", "label": "Cart" }
+          ]
+        },
+        { "type": "text", "id": "item_handle", "label": "Handle (optional, e.g. kids)" },
+        { "type": "textarea", "id": "item_message_override", "label": "Override message (HTML allowed)", "default": "<!-- override message -->" },
+        { "type": "url", "id": "item_message_link_override", "label": "Override link (optional)" }
+      ]
+    },
+    {
+      "type": "override",
+      "name": "Override colors/logos",
+      "settings": [
+        { "type": "checkbox", "id": "enable_override", "label": "Enable this override", "default": true },
+        { "type": "select", "id": "apply_to", "label": "Apply to",
+          "default": "any",
+          "options": [
+            { "value": "any", "label": "Any page" },
+            { "value": "index", "label": "Home" },
+            { "value": "collection", "label": "Collection" },
+            { "value": "product", "label": "Product" },
+            { "value": "page", "label": "Page" },
+            { "value": "blog", "label": "Blog" },
+            { "value": "article", "label": "Article" },
+            { "value": "cart", "label": "Cart" }
+          ]
+        },
+        { "type": "text", "id": "handle", "label": "Handle (optional, e.g. kids)" },
+
+        { "type": "checkbox", "id": "enable_colors", "label": "Enable color override", "default": false },
+        { "type": "color", "id": "bg", "label": "Background color", "default": "#ffffff" },
+        { "type": "color", "id": "text", "label": "Text color", "default": "#111111" },
+
+        { "type": "url", "id": "logo_left", "label": "Left logo URL" },
+        { "type": "text", "id": "logo_left_alt", "label": "Left logo ALT", "default": "announcement logo" },
+
+        { "type": "url", "id": "logo_right", "label": "Right logo URL" },
+        { "type": "text", "id": "logo_right_alt", "label": "Right logo ALT", "default": "announcement logo right" },
+
+        { "type": "range", "id": "logo_height_override", "min": 0, "max": 48, "step": 2, "unit": "px", "label": "Logos height override (0 = use default)", "default": 0 }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Announcement Bar",
+      "category": "Custom",
+      "blocks": [
+        { "type": "item" },
+        { "type": "item" },
+        { "type": "override" }
+      ]
+    }
+  ]
+}
+{% endschema %}
