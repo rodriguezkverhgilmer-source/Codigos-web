@@ -1,0 +1,192 @@
+Crea el script “kick” de autoplay
+
+assets/pdp-video-kick.js
+
+// pdp-video-kick.js
+// Impact 6.11.2 — Autoplay/loop en product-gallery con “user-gesture fallback” (simula UN clic si hace falta)
+
+(function () {
+  "use strict";
+
+  function getRoot() {
+    const s = document.currentScript || (function () {
+      const nodes = document.querySelectorAll('script[src*="pdp-video-kick.js"]');
+      return nodes[nodes.length - 1] || null;
+    })();
+    const id = s && s.dataset ? s.dataset.sectionId : null;
+    return (id && document.querySelector(`#shopify-section-${id}`)) ||
+           document.querySelector(".shopify-section--main-product") ||
+           document;
+  }
+
+  function visibleTile(gallery) {
+    return Array.from(gallery.querySelectorAll(".product-gallery__media, .product__media, [data-media-id]"))
+      .find(el => !el.hasAttribute("hidden") && el.offsetParent !== null) || null;
+  }
+
+  function tuneHTMLVideo(v) {
+    if (!v) return;
+    v.muted = true; v.setAttribute("muted", "");
+    v.playsInline = true; v.setAttribute("playsinline", "");
+    v.loop = true; v.setAttribute("loop", "");
+    v.setAttribute("autoplay", "");
+    v.removeAttribute("controls");
+    if (!v.getAttribute("preload")) v.setAttribute("preload", "metadata");
+    const play = () => { const p = v.play(); if (p && p.catch) p.catch(() => {}); };
+    v.addEventListener("canplay", play, { once: true });
+    setTimeout(play, 150);
+    setTimeout(play, 800);
+  }
+
+  function paramed(src, edits) {
+    try {
+      const u = new URL(src, location.href);
+      Object.entries(edits).forEach(([k,v]) => u.searchParams.set(k,String(v)));
+      return u.toString();
+    } catch { return src; }
+  }
+
+  function kickIframe(ifr) {
+    if (!ifr) return;
+    const src = ifr.getAttribute("src") || "";
+    const isYT = /(?:youtube\.com|youtu\.be)/.test(src);
+    const isVimeo = /vimeo\.com/.test(src);
+
+    const allow = (ifr.getAttribute("allow") || "").trim();
+    if (!/autoplay/i.test(allow)) ifr.setAttribute("allow", (allow ? allow + "; " : "") + "autoplay; fullscreen; picture-in-picture; encrypted-media");
+
+    if (isYT) {
+      let href = src;
+      try {
+        const u = new URL(src, location.href);
+        const m = u.pathname.match(/\/embed\/([^\/?#]+)/);
+        const vid = u.searchParams.get("v") || (m && m[1]) || "";
+        if (vid) u.searchParams.set("playlist", vid);
+        u.searchParams.set("autoplay", "1");
+        u.searchParams.set("loop", "1");
+        u.searchParams.set("mute", "1");
+        u.searchParams.set("playsinline", "1");
+        u.searchParams.set("rel", "0");
+        u.searchParams.set("enablejsapi", "1");
+        href = u.toString();
+      } catch {}
+      if (href !== src) ifr.setAttribute("src", href);
+
+      const play = () => {
+        try {
+          ifr.contentWindow && ifr.contentWindow.postMessage(JSON.stringify({ event: "command", func: "mute" }), "*");
+          ifr.contentWindow && ifr.contentWindow.postMessage(JSON.stringify({ event: "command", func: "playVideo" }), "*");
+        } catch {}
+      };
+      ifr.addEventListener("load", () => { play(); setTimeout(play, 300); });
+      setTimeout(play, 900);
+    } else if (isVimeo) {
+      const href = paramed(src, { autoplay: 1, loop: 1, muted: 1, background: 1 });
+      if (href !== src) ifr.setAttribute("src", href);
+      const play = () => { try { ifr.contentWindow && ifr.contentWindow.postMessage({ method: "play" }, "*"); } catch {} };
+      ifr.addEventListener("load", () => { play(); setTimeout(play, 300); });
+      setTimeout(play, 900);
+    }
+  }
+
+  function stripOverlays(tile) {
+    tile.querySelectorAll(
+      ".deferred-media__poster, [data-deferred-media-button], video-media button, .video-media__poster, .media__play, .product-media__play"
+    ).forEach(el => { el.style.display = "none"; el.setAttribute("aria-hidden", "true"); });
+  }
+
+  function needClickFallback(tile) {
+    const v = tile.querySelector("video");
+    if (v) return v.paused;
+    const ifr = tile.querySelector("iframe");
+    return !!ifr; // probamos una vez si es iframe
+  }
+
+  function clickFallback(tile) {
+    const btn = tile.querySelector("[data-deferred-media-button], .deferred-media__poster, .media__play, button");
+    if (btn) { btn.click(); return; }
+    const target = tile.querySelector("video-media, deferred-media, iframe, video") || tile;
+    const evts = ["pointerdown","mousedown","touchstart","click"];
+    evts.forEach(type => target.dispatchEvent(new Event(type, { bubbles: true, cancelable: true })));
+  }
+
+  function kickOnce() {
+    const root = getRoot();
+    const gallery = root.querySelector(".product-gallery, .product-gallery__media-list, media-gallery") || root;
+    const tile = visibleTile(gallery);
+    if (!tile) return;
+
+    stripOverlays(tile);
+
+    const v = tile.querySelector("video");
+    if (v) tuneHTMLVideo(v);
+    const ifr = tile.querySelector("iframe");
+    if (ifr) kickIframe(ifr);
+
+    setTimeout(() => {
+      if (needClickFallback(tile)) clickFallback(tile);
+    }, 700);
+  }
+
+  function init() {
+    kickOnce();
+    setTimeout(kickOnce, 400);
+    setTimeout(kickOnce, 1100);
+    ["media-selected", "theme:media:changed", "variant:changed"].forEach(ev => {
+      document.addEventListener(ev, () => setTimeout(kickOnce, 60), { passive: true });
+    });
+    let t; window.addEventListener("scroll", () => { clearTimeout(t); t = setTimeout(kickOnce, 80); }, { passive: true });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+
+
+
+Incluye el script en la PDP
+
+Ruta: sections/main-product.liquid
+
+
+
+{%- if product.media.size > 0 -%}
+  {%- render 'product-gallery', product: product, product_form_id: product_form_id -%}
+{%- endif -%}
+
+{%- comment -%} Kick autoplay en product-gallery (Impact) {%- endcomment -%}
+<script src="{{ 'pdp-video-kick.js' | asset_url }}" defer data-section-id="{{ section.id }}"></script>
+
+{%- render 'product-info', 
+  product: product, 
+  update_url: true,
+  product_form_id: product_form_id,
+  context: 'main_product'
+-%}
+
+
+
+
+Añade CSS para quitar overlays que bloquean el player
+
+Ruta: assets/base.css
+
+
+/* Autoplay fix — oculta overlays por encima del player */
+.deferred-media__poster,
+video-media button,
+.video-media__poster,
+.media__play,
+.product-media__play {
+  display: none !important;
+}
+
+/* Asegurar visibilidad y clic del player dentro de la galería */
+.product-gallery iframe,
+.product-gallery video {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  background: #000;
+}
+
