@@ -1,0 +1,224 @@
+{% comment %}
+  Counter Stats – OS2.0
+  Tema: compatible Dawn / Minimog / Impact
+  - Animación desde 0 al número objetivo al entrar en viewport.
+  - Prefijo/Sufijo configurables (+, %, etc.)
+  - Grid responsive, sin dependencias.
+  - Ajustes extra para mobile: tamaño número/label y espaciados.
+{% endcomment %}
+
+<section id="os-counter-{{ section.id }}" class="os-counter">
+  <div class="{% if section.settings.full_width %}os-counter__container os-counter__container--fluid{% else %}page-width os-counter__container{% endif %}">
+    <div class="os-counter__grid" style="gap: {{ section.settings.gap_px }}px;">
+      {% for block in section.blocks %}
+        {% assign target = block.settings.target_number | default: 0 %}
+        <div class="os-counter__item" {{ block.shopify_attributes }}>
+          <div
+            class="os-counter__num"
+            data-target="{{ target }}"
+            data-duration="{{ block.settings.duration_ms }}"
+            data-prefix="{{ block.settings.prefix | escape }}"
+            data-suffix="{{ block.settings.suffix | escape }}"
+            data-group="{{ section.settings.group_thousands }}"
+          >
+            {{ block.settings.prefix }}0{{ block.settings.suffix }}
+          </div>
+          {% if block.settings.label != blank %}
+            <div class="os-counter__label">{{ block.settings.label }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <style>
+    /* ===== Counter Stats – styles (namespaced) ===== */
+    #os-counter-{{ section.id }} {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+      background: {{ section.settings.bg_color }};
+    }
+    #os-counter-{{ section.id }} .os-counter__container--fluid {
+      max-width: 100%;
+      padding-left: {{ section.settings.fluid_side_padding }}px;
+      padding-right: {{ section.settings.fluid_side_padding }}px;
+    }
+    #os-counter-{{ section.id }} .os-counter__grid {
+      display: grid;
+      grid-template-columns: repeat({{ section.settings.columns_desktop }}, 1fr);
+    }
+    @media (max-width: 989px) {
+      #os-counter-{{ section.id }} .os-counter__grid {
+        grid-template-columns: repeat({{ section.settings.columns_tablet }}, 1fr);
+      }
+    }
+    @media (max-width: 749px) {
+      #os-counter-{{ section.id }} .os-counter__grid {
+        grid-template-columns: repeat({{ section.settings.columns_mobile }}, 1fr);
+        gap: {{ section.settings.gap_mobile_px }}px; /* gap específico para mobile */
+      }
+    }
+    #os-counter-{{ section.id }} .os-counter__item {
+      text-align: {{ section.settings.text_align }};
+    }
+    #os-counter-{{ section.id }} .os-counter__num {
+      font-size: {{ section.settings.number_size }}px;
+      line-height: 1.1;
+      font-weight: 700;
+      color: {{ section.settings.number_color }};
+      letter-spacing: -0.5px;
+    }
+    #os-counter-{{ section.id }} .os-counter__label {
+      margin-top: 10px;
+      font-size: {{ section.settings.label_size }}px;
+      color: {{ section.settings.label_color }};
+      font-weight: 500;
+      max-width: {{ section.settings.label_max_width }}px; /* controla la longitud de línea */
+      {% if section.settings.text_align == 'center' %}margin-left: auto; margin-right: auto;{% endif %}
+    }
+
+    /* ===== Mobile overrides ===== */
+    @media (max-width: 749px) {
+      #os-counter-{{ section.id }} .os-counter__num {
+        font-size: {{ section.settings.number_size_mobile }}px; /* número más pequeño en mobile */
+      }
+      #os-counter-{{ section.id }} .os-counter__label {
+        font-size: {{ section.settings.label_size_mobile }}px; /* título más grande en mobile */
+        margin-top: {{ section.settings.label_spacing_mobile_px }}px; /* más aire al título */
+        max-width: {{ section.settings.label_max_width_mobile }}px;
+      }
+      /* Opcional: más espacio vertical del bloque en mobile si se necesita aire extra */
+      #os-counter-{{ section.id }} .os-counter__item {
+        padding-top: {{ section.settings.item_padding_top_mobile }}px;
+        padding-bottom: {{ section.settings.item_padding_bottom_mobile }}px;
+      }
+    }
+  </style>
+
+  <script>
+    (function() {
+      const root = document.getElementById('os-counter-{{ section.id }}');
+      if (!root) return;
+
+      const els = root.querySelectorAll('.os-counter__num');
+      let hasAnimated = false;
+
+      function formatValue(value, useGrouping) {
+        return useGrouping ? Number(Math.floor(value)).toLocaleString() : Math.floor(value).toString();
+      }
+
+      function animate(el) {
+        const target = parseFloat(el.getAttribute('data-target')) || 0;
+        const duration = parseInt(el.getAttribute('data-duration')) || 1200;
+        const prefix = el.getAttribute('data-prefix') || '';
+        const suffix = el.getAttribute('data-suffix') || '';
+        const group = el.getAttribute('data-group') === 'true';
+
+        const start = 0;
+        const startTime = performance.now();
+
+        function step(now) {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3); /* easeOutCubic */
+          const value = start + (target - start) * eased;
+          el.textContent = prefix + formatValue(value, group) + suffix;
+
+          if (progress < 1) {
+            requestAnimationFrame(step);
+          } else {
+            el.textContent = prefix + formatValue(target, group) + suffix;
+          }
+        }
+        requestAnimationFrame(step);
+      }
+
+      // Inicia una sola vez cuando entra en viewport
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting && !hasAnimated) {
+              els.forEach(animate);
+              hasAnimated = true;
+              io.disconnect();
+            }
+          });
+        }, { rootMargin: '0px 0px -10% 0px', threshold: 0.15 });
+        io.observe(root);
+      } else {
+        // Fallback
+        els.forEach(animate);
+      }
+    })();
+  </script>
+</section>
+
+{% schema %}
+{
+  "name": "Counter stats",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    { "type": "checkbox", "id": "full_width", "label": "Usar ancho completo", "default": false },
+    { "type": "range", "id": "fluid_side_padding", "label": "Padding lateral (ancho completo)", "min": 0, "max": 80, "step": 2, "unit": "px", "default": 24 },
+    { "type": "color", "id": "bg_color", "label": "Color de fondo", "default": "#FFFFFF" },
+
+    { "type": "select", "id": "text_align", "label": "Alineación de texto", "default": "center", "options": [
+      { "value": "left", "label": "Izquierda" },
+      { "value": "center", "label": "Centro" }
+    ]},
+
+    { "type": "checkbox", "id": "group_thousands", "label": "Separar miles (1,000)", "default": true },
+
+    { "type": "range", "id": "columns_desktop", "label": "Columnas en desktop", "min": 1, "max": 6, "step": 1, "default": 4 },
+    { "type": "range", "id": "columns_tablet", "label": "Columnas en tablet", "min": 1, "max": 4, "step": 1, "default": 2 },
+    { "type": "range", "id": "columns_mobile", "label": "Columnas en mobile", "min": 1, "max": 3, "step": 1, "default": 2 },
+
+    { "type": "range", "id": "gap_px", "label": "Espacio entre ítems", "min": 0, "max": 80, "step": 2, "unit": "px", "default": 60 },
+    { "type": "range", "id": "gap_mobile_px", "label": "Espacio entre ítems (mobile)", "min": 0, "max": 80, "step": 2, "unit": "px", "default": 28 },
+
+    { "type": "range", "id": "number_size", "label": "Tamaño del número (desktop/tablet)", "min": 24, "max": 120, "step": 2, "unit": "px", "default": 72 },
+    { "type": "range", "id": "number_size_mobile", "label": "Tamaño del número (mobile)", "min": 20, "max": 96, "step": 2, "unit": "px", "default": 40 },
+    { "type": "color", "id": "number_color", "label": "Color del número", "default": "#000000" },
+
+    { "type": "range", "id": "label_size", "label": "Tamaño de la etiqueta (desktop/tablet)", "min": 10, "max": 28, "step": 1, "unit": "px", "default": 18 },
+    { "type": "range", "id": "label_size_mobile", "label": "Tamaño de la etiqueta (mobile)", "min": 10, "max": 32, "step": 1, "unit": "px", "default": 20 },
+    { "type": "range", "id": "label_spacing_mobile_px", "label": "Espacio superior del título (mobile)", "min": 0, "max": 40, "step": 1, "unit": "px", "default": 14 },
+    { "type": "range", "id": "label_max_width", "label": "Ancho máx. del título (px)", "min": 160, "max": 1000, "step": 10, "unit": "px", "default": 560 },
+    { "type": "range", "id": "label_max_width_mobile", "label": "Ancho máx. del título (mobile, px)", "min": 120, "max": 800, "step": 10, "unit": "px", "default": 320 },
+    { "type": "color", "id": "label_color", "label": "Color de la etiqueta", "default": "#000000" },
+
+    { "type": "range", "id": "item_padding_top_mobile", "label": "Padding top del ítem (mobile)", "min": 0, "max": 60, "step": 2, "unit": "px", "default": 6 },
+    { "type": "range", "id": "item_padding_bottom_mobile", "label": "Padding bottom del ítem (mobile)", "min": 0, "max": 60, "step": 2, "unit": "px", "default": 6 },
+
+    { "type": "range", "id": "padding_top", "label": "Padding superior", "min": 0, "max": 120, "step": 2, "unit": "px", "default": 60 },
+    { "type": "range", "id": "padding_bottom", "label": "Padding inferior", "min": 0, "max": 120, "step": 2, "unit": "px", "default": 60 }
+  ],
+  "blocks": [
+    {
+      "type": "stat",
+      "name": "Item",
+      "settings": [
+        { "type": "text", "id": "prefix", "label": "Prefijo (opcional)", "default": "+" },
+        { "type": "number", "id": "target_number", "label": "Número objetivo", "default": 100 },
+        { "type": "text", "id": "suffix", "label": "Sufijo (opcional)", "default": "+" },
+        { "type": "text", "id": "label", "label": "Etiqueta", "default": "Texto descriptivo" },
+        { "type": "range", "id": "duration_ms", "label": "Duración animación (ms)", "min": 300, "max": 5000, "step": 100, "default": 1200 }
+      ]
+    }
+  ],
+  "max_blocks": 12,
+  "presets": [
+    {
+      "name": "Counter stats",
+      "category": "Texto",
+      "blocks": [
+        { "type": "stat", "settings": { "prefix": "", "target_number": 20, "suffix": "+", "label": "Professional teams" } },
+        { "type": "stat", "settings": { "prefix": "", "target_number": 1000, "suffix": "+", "label": "Dressed teams" } },
+        { "type": "stat", "settings": { "prefix": "+", "target_number": 250, "suffix": "", "label": "Catalog products" } },
+        { "type": "stat", "settings": { "prefix": "", "target_number": 100, "suffix": "%", "label": "Satisfied clients" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
