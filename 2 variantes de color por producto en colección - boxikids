@@ -1,0 +1,579 @@
+{{ 'component-card.css' | asset_url | stylesheet_tag }}
+{{ 'component-price.css' | asset_url | stylesheet_tag }}
+
+{%- unless section.settings.quick_add == 'none' -%}
+  {{ 'quick-add.css' | asset_url | stylesheet_tag }}
+{%- endunless -%}
+{%- if section.settings.quick_add == 'standard' -%}
+  <script src="{{ 'quick-add.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
+{%- if section.settings.quick_add == 'bulk' -%}
+  <script src="{{ 'quick-add-bulk.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'quantity-popover.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'price-per-item.js' | asset_url }}" defer="defer"></script>
+  <script src="{{ 'quick-order-list.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
+
+{%- assign show_new_badge = true -%}
+{%- assign new_badge_text = 'REGALO ÉPICO🎁' -%}
+{%- assign new_badge_bg = 'rgba(163,163,255,0.15)' -%}
+{%- assign new_badge_color = '#A3A3FF' -%}
+{%- assign new_badge_size = '1.0rem' -%}
+{%- assign new_badge_top = '1.0rem' -%}
+{%- assign new_badge_left = '1.0rem' -%}
+{%- assign new_badge_weight = '400' -%}
+{%- assign new_badge_radius = '5px' -%}
+{%- assign new_badge_px = '0.35rem 0.55rem' -%}
+
+{%- style -%}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+    --vc-mt: {{ section.settings.vc_margin_top | default: 36 }}px;
+    --card-info-pt: {{ section.settings.card_info_padding | default: 16 }}px;
+  }
+  @media (min-width: 750px){
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+
+  /* Título */
+  .section-{{ section.id }}-padding .page-width > .title.inline-richtext{
+    font-size: {{ section.settings.title_size_mobile }}px !important;
+    line-height: 1.15;
+    margin: 0 0 3rem 0;
+  }
+  @media (min-width: 750px){
+    .section-{{ section.id }}-padding .page-width > .title.inline-richtext{
+      font-size: 34px !important;
+    }
+  }
+
+  /* Media de la card */
+  .variant-card__media{position:relative;width:100%;overflow:hidden;border-radius:var(--media-radius,0)}
+  .variant-card__media::before{content:"";display:block;padding-top:var(--variant-aspect,100%)}
+  .variant-card__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .3s ease;display:block}
+  .variant-card__img--secondary{opacity:0}
+  /* ← Hover SOLO en dispositivos con hover (evita “segunda imagen pegada” en móvil) */
+  @media (hover:hover){
+    .card-wrapper:hover .variant-card__img--secondary{opacity:1}
+    .card-wrapper:hover .variant-card__img--primary{opacity:0}
+  }
+
+  /* Info compacta */
+  .variant-card .card-information{
+    display:flex;flex-direction:column;row-gap:0.25rem;
+    margin-top:0 !important;padding-top:var(--card-info-pt);
+  }
+  .variant-card .card-information > *{margin:0 !important;}
+
+  /* ====== GAPS y anti-huecos para ambos grids ====== */
+  .section-{{ section.id }}-padding .product-grid{
+    list-style:none;margin:0;padding:0;
+    row-gap: 28px !important;
+    column-gap: 24px;
+    grid-auto-flow: row dense;
+  }
+  .section-{{ section.id }}-padding .product-grid > .grid__item{ grid-row: auto / span 1; }
+
+  /* Cards de altura consistente */
+  .section-{{ section.id }}-padding .variant-card{ display:flex;flex-direction:column;height:100%; }
+  .section-{{ section.id }}-padding .variant-card .variant-card__media{ flex:0 0 auto; }
+  .section-{{ section.id }}-padding .variant-card .card-information{ flex:1 0 auto; min-height:110px; }
+
+/* Badge */
+.mg-new-badge{
+  position: absolute;
+  top: 8px;
+  left: 12px;
+
+  background: #625DFE;          /* fondo correcto (antes faltaba ;) */
+  color: #DBEA76;               /* color de texto pedido */
+
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 5px;
+
+  letter-spacing: 0.2px;
+  text-transform: none;
+  pointer-events: none;
+  z-index: 5;
+}
+
+
+
+  /* Botón */
+  .vc-wrap-{{ section.id }}{display:flex;justify-content:center;margin-top:var(--vc-mt)}
+  .vc-btn-{{ section.id }}{
+    display:inline-block;background-color:#F78063;color:#fff;padding:1.2em 3em;font-size:1.2rem;font-weight:700;
+    text-transform:uppercase;border-radius:6px;text-decoration:none;transition:background-color .3s,transform .2s;border:0;box-shadow:none;outline:none
+  }
+  .vc-btn-{{ section.id }}:hover,.vc-btn-{{ section.id }}:focus{background-color:color-mix(in srgb,#FE5121 80%,black);transform:translateY(-2px)}
+
+  /* ====== LAYOUT MOBILE: fuerzo 2 columnas en ambos UL ====== */
+  @media (max-width: 989px){
+    .section-{{ section.id }}-padding .product-grid.grid--top,
+    .section-{{ section.id }}-padding .product-grid.grid--bottom{
+      display:grid !important;
+      grid-template-columns: repeat({{ section.settings.columns_mobile | default: 2 }}, minmax(0, 1fr)) !important;
+      column-gap: 16px;
+      row-gap: 20px;
+    }
+    .section-{{ section.id }}-padding .product-grid.grid--top > .grid__item,
+    .section-{{ section.id }}-padding .product-grid.grid--bottom > .grid__item{
+      min-width:0;grid-column:auto / span 1 !important;grid-row:auto / span 1 !important;
+    }
+  }
+{%- endstyle -%}
+
+{%- assign color_option_label = section.settings.color_option_name | default: 'Color' | downcase -%}
+
+{%- assign global_order_raw = section.settings.color_order | default: '' | downcase | split: ',' -%}
+{%- assign global_order = '' -%}
+{%- for c in global_order_raw -%}
+  {%- assign ct = c | strip -%}
+  {%- if ct != '' -%}{%- assign global_order = global_order | append: ct | append: ',' -%}{%- endif -%}
+{%- endfor -%}
+{%- assign global_order_list = global_order | split: ',' -%}
+
+{%- assign want_p1 = section.settings.count_p1 | default: 4 -%}
+{%- assign want_p2 = section.settings.count_p2 | default: 2 -%}
+{%- assign want_p3 = section.settings.count_p3 | default: 2 -%}
+{%- assign max_total_cards = want_p1 | plus: want_p2 | plus: want_p3 -%}
+
+<div class="section-{{ section.id }}-padding color-{{ section.settings.color_scheme }} gradient">
+  <div class="page-width">
+    {%- if section.settings.title != blank -%}
+      <h2 class="title inline-richtext">{{ section.settings.title }}</h2>
+    {%- endif -%}
+  </div>
+
+  {%- assign coll = section.settings.collection -%}
+  <div class="collection page-width">
+
+    {%- assign cards_rendered = 0 -%}
+    {%- assign p1 = section.settings.product_1 -%}
+    {%- assign p1_colors_str = section.settings.product_1_colors | default: '' -%}
+    {%- assign p1_only = section.settings.product_1_only -%}
+
+    {%- assign p2 = section.settings.product_2 -%}
+    {%- assign p2_colors_str = section.settings.product_2_colors | default: '' -%}
+    {%- assign p2_only = section.settings.product_2_only -%}
+
+    {%- assign p3 = section.settings.product_3 -%}
+    {%- assign p3_colors_str = section.settings.product_3_colors | default: '' -%}
+    {%- assign p3_only = section.settings.product_3_only -%}
+
+    {%- comment -%} ========= GRID SUPERIOR: SOLO P1 ========= {%- endcomment -%}
+    <ul class="grid product-grid grid--{{ section.settings.columns_mobile }}-col-tablet-down grid--{{ section.settings.columns_desktop }}-col-desktop {% if section.settings.quick_add == 'bulk' %} collection-quick-add-bulk{% endif %} grid--top">
+      {%- assign current_prod = p1 -%}
+      {%- assign current_pref_str = p1_colors_str -%}
+      {%- assign current_only = p1_only -%}
+      {%- assign current_want = want_p1 -%}
+      {%- if current_prod and current_want > 0 -%}
+        {%- assign color_opt_index = blank -%}
+        {%- for opt in current_prod.options_with_values -%}
+          {%- assign odn = opt.name | downcase -%}
+          {%- if odn == color_option_label -%}{%- assign color_opt_index = forloop.index0 -%}{%- break -%}{%- endif -%}
+        {%- endfor -%}
+        {%- if color_opt_index != blank -%}
+          {%- assign pref_list = global_order_list -%}
+          {%- if current_pref_str != blank -%}
+            {%- assign tmp = '' -%}
+            {%- assign pr = current_pref_str | downcase | split: ',' -%}
+            {%- for it in pr -%}
+              {%- assign it2 = it | strip -%}
+              {%- if it2 != '' -%}{%- assign tmp = tmp | append: it2 | append: ',' -%}{%- endif -%}
+            {%- endfor -%}
+            {%- assign pref_list = tmp | split: ',' -%}
+          {%- endif -%}
+
+          {%- assign per_product_count = 0 -%}
+          {%- assign chosen_colors = '' -%}
+
+          {%- for pref in pref_list -%}
+            {%- if per_product_count >= current_want -%}{%- break -%}{%- endif -%}
+            {%- assign pref_trim = pref | strip -%}{%- if pref_trim == '' -%}{%- continue -%}{%- endif -%}
+            {%- assign found_variant = blank -%}{%- assign found_color_label = '' -%}
+            {%- for v in current_prod.variants -%}
+              {%- if v.available != true -%}{%- continue -%}{%- endif -%}
+              {%- assign v_color = v.options[color_opt_index] | strip -%}{%- if v_color == '' -%}{%- continue -%}{%- endif -%}
+              {%- assign v_key = v_color | downcase -%}{%- if v_key != pref_trim -%}{%- continue -%}{%- endif -%}
+              {%- assign tok = v_key | append: ',' -%}
+              {%- unless chosen_colors contains tok -%}{%- assign found_variant = v -%}{%- assign found_color_label = v_color -%}{%- endunless -%}
+              {%- if found_variant -%}{%- break -%}{%- endif -%}
+            {%- endfor -%}
+            {%- if found_variant -%}
+              {%- assign chosen_colors = chosen_colors | append: found_color_label | downcase | append: ',' -%}
+
+              {%- assign media_primary = found_variant.featured_media | default: current_prod.featured_media -%}
+              {%- assign media_secondary = blank -%}
+              {%- if section.settings.show_secondary_image -%}
+                {%- for m in current_prod.media -%}
+                  {%- if m.id != media_primary.id -%}{%- assign media_secondary = m -%}{%- break -%}{%- endif -%}
+                {%- endfor -%}
+              {%- endif -%}
+
+              {%- assign loading_attr = 'eager' -%}
+              {%- case section.settings.image_ratio -%}
+                {%- when 'square' -%}{%- assign pct_padding = 100 -%}
+                {%- when 'portrait' -%}{%- assign pct_padding = 133.333 -%}
+                {%- else -%}
+                  {%- if media_primary and media_primary.aspect_ratio -%}
+                    {%- assign pct_padding = 100 | divided_by: media_primary.aspect_ratio -%}
+                  {%- else -%}{%- assign pct_padding = 100 -%}{%- endif -%}
+              {%- endcase -%}
+
+              <li class="grid__item">
+                <div class="card-wrapper variant-card">
+                  <a href="{% if coll != blank %}{{ current_prod.url | within: coll }}{% else %}{{ current_prod.url }}{% endif %}?variant={{ found_variant.id }}" class="full-unstyled-link">
+                    <div class="variant-card__media" style="--variant-aspect: {{ pct_padding }}%; --new-bg: {{ new_badge_bg }}; --new-color: {{ new_badge_color }}; --new-size: {{ new_badge_size }}; --new-top: {{ new_badge_top }}; --new-left: {{ new_badge_left }}; --new-weight: {{ new_badge_weight }}; --new-radius: {{ new_badge_radius }}; --new-padding: {{ new_badge_px }};">
+                      {%- if show_new_badge -%}<span class="mg-new-badge">{{ new_badge_text }}</span>{%- endif -%}
+                      {{ media_primary | image_url: width: 1066 | image_tag: alt: current_prod.title, loading: loading_attr, sizes: '(min-width: 990px) 25vw, 50vw', widths: '360,533,720,940,1066', class: 'variant-card__img variant-card__img--primary' }}
+                      {%- if section.settings.show_secondary_image and media_secondary -%}
+                        {{ media_secondary | image_url: width: 1066 | image_tag: alt: current_prod.title, loading: loading_attr, sizes: '(min-width: 990px) 25vw, 50vw', widths: '360,533,720,940,1066', class: 'variant-card__img variant-card__img--secondary' }}
+                      {%- endif -%}
+                    </div>
+                    <div class="card-information">
+                      <h3 class="card__heading h5">{{ current_prod.title }}</h3>
+                      <p class="caption-with-letter-spacing">{{ found_color_label }}</p>
+                      {%- render 'price', product: current_prod, price_class: 'price--listing', variant: found_variant -%}
+                      {% render 'mpi-installments-dawn', product: current_prod, installments: 12 %}
+                    </div>
+                  </a>
+                </div>
+              </li>
+
+              {%- assign per_product_count = per_product_count | plus: 1 -%}
+            {%- endif -%}
+          {%- endfor -%}
+
+          {%- if current_only != true and per_product_count < current_want -%}
+            {%- for v in current_prod.variants -%}
+              {%- if per_product_count >= current_want -%}{%- break -%}{%- endif -%}
+              {%- if v.available != true -%}{%- continue -%}{%- endif -%}
+              {%- assign c = v.options[color_opt_index] | strip -%}{%- if c == '' -%}{%- continue -%}{%- endif -%}
+              {%- assign k = c | downcase -%}{%- assign t = k | append: ',' -%}{%- if chosen_colors contains t -%}{%- continue -%}{%- endif -%}
+
+              {%- assign media_primary = v.featured_media | default: current_prod.featured_media -%}
+              {%- assign media_secondary = blank -%}
+              {%- if section.settings.show_secondary_image -%}
+                {%- for m in current_prod.media -%}
+                  {%- if m.id != media_primary.id -%}{%- assign media_secondary = m -%}{%- break -%}{%- endif -%}
+                {%- endfor -%}
+              {%- endif -%}
+
+              {%- assign loading_attr = 'eager' -%}
+              {%- case section.settings.image_ratio -%}
+                {%- when 'square' -%}{%- assign pct_padding = 100 -%}
+                {%- when 'portrait' -%}{%- assign pct_padding = 133.333 -%}
+                {%- else -%}
+                  {%- if media_primary and media_primary.aspect_ratio -%}
+                    {%- assign pct_padding = 100 | divided_by: media_primary.aspect_ratio -%}
+                  {%- else -%}{%- assign pct_padding = 100 -%}{%- endif -%}
+              {%- endcase -%}
+
+              <li class="grid__item">
+                <div class="card-wrapper variant-card">
+                  <a href="{% if coll != blank %}{{ current_prod.url | within: coll }}{% else %}{{ current_prod.url }}{% endif %}?variant={{ v.id }}" class="full-unstyled-link">
+                    <div class="variant-card__media" style="--variant-aspect: {{ pct_padding }}%; --new-bg: {{ new_badge_bg }}; --new-color: {{ new_badge_color }}; --new-size: {{ new_badge_size }}; --new-top: {{ new_badge_top }}; --new-left: {{ new_badge_left }}; --new-weight: {{ new_badge_weight }}; --new-radius: {{ new_badge_radius }}; --new-padding: {{ new_badge_px }};">
+                      {%- if show_new_badge -%}<span class="mg-new-badge">{{ new_badge_text }}</span>{%- endif -%}
+                      {{ v.featured_media | default: current_prod.featured_media | image_url: width: 1066 | image_tag: alt: current_prod.title, loading: loading_attr, sizes: '(min-width: 990px) 25vw, 50vw', widths: '360,533,720,940,1066', class: 'variant-card__img variant-card__img--primary' }}
+                      {%- if section.settings.show_secondary_image and media_secondary -%}
+                        {{ media_secondary | image_url: width: 1066 | image_tag: alt: current_prod.title, loading: loading_attr, sizes: '(min-width: 990px) 25vw, 50vw', widths: '360,533,720,940,1066', class: 'variant-card__img variant-card__img--secondary' }}
+                      {%- endif -%}
+                    </div>
+                    <div class="card-information">
+                      <h3 class="card__heading h5">{{ current_prod.title }}</h3>
+                      <p class="caption-with-letter-spacing">{{ c }}</p>
+                      {%- render 'price', product: current_prod, price_class: 'price--listing', variant: v -%}
+                      {% render 'mpi-installments-dawn', product: current_prod, installments: 12 %}
+                    </div>
+                  </a>
+                </div>
+              </li>
+
+              {%- assign per_product_count = per_product_count | plus: 1 -%}
+            {%- endfor -%}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endif -%}
+    </ul>
+
+    {%- comment -%} ========= GRID INFERIOR: P2 + P3 ========= {%- endcomment -%}
+    <ul class="grid product-grid grid--{{ section.settings.columns_mobile }}-col-tablet-down grid--{{ section.settings.columns_desktop }}-col-desktop {% if section.settings.quick_add == 'bulk' %} collection-quick-add-bulk{% endif %} grid--bottom" style="margin-top: 8px;">
+      {%- assign render_list = 'p2,p3' | split: ',' -%}
+      {%- for which in render_list -%}
+        {%- assign current_prod = nil -%}
+        {%- assign current_pref_str = '' -%}
+        {%- assign current_only = true -%}
+        {%- assign current_want = 2 -%}
+        {%- if which == 'p2' -%}
+          {%- assign current_prod = p2 -%}
+          {%- assign current_pref_str = p2_colors_str -%}
+          {%- assign current_only = p2_only -%}
+          {%- assign current_want = want_p2 -%}
+        {%- else -%}
+          {%- assign current_prod = p3 -%}
+          {%- assign current_pref_str = p3_colors_str -%}
+          {%- assign current_only = p3_only -%}
+          {%- assign current_want = want_p3 -%}
+        {%- endif -%}
+
+        {%- if current_prod and current_want > 0 -%}
+          {%- assign color_opt_index = blank -%}
+          {%- for opt in current_prod.options_with_values -%}
+            {%- assign odn = opt.name | downcase -%}
+            {%- if odn == color_option_label -%}{%- assign color_opt_index = forloop.index0 -%}{%- break -%}{%- endif -%}
+          {%- endfor -%}
+          {%- if color_opt_index != blank -%}
+            {%- assign pref_list = global_order_list -%}
+            {%- if current_pref_str != blank -%}
+              {%- assign tmp = '' -%}
+              {%- assign pr = current_pref_str | downcase | split: ',' -%}
+              {%- for it in pr -%}
+                {%- assign it2 = it | strip -%}
+                {%- if it2 != '' -%}{%- assign tmp = tmp | append: it2 | append: ',' -%}{%- endif -%}
+              {%- endfor -%}
+              {%- assign pref_list = tmp | split: ',' -%}
+            {%- endif -%}
+
+            {%- assign per_product_count = 0 -%}
+            {%- assign chosen_colors = '' -%}
+
+            {%- for pref in pref_list -%}
+              {%- if per_product_count >= current_want -%}{%- break -%}{%- endif -%}
+              {%- assign pref_trim = pref | strip -%}{%- if pref_trim == '' -%}{%- continue -%}{%- endif -%}
+              {%- assign found_variant = blank -%}{%- assign found_color_label = '' -%}
+              {%- for v in current_prod.variants -%}
+                {%- if v.available != true -%}{%- continue -%}{%- endif -%}
+                {%- assign v_color = v.options[color_opt_index] | strip -%}{%- if v_color == '' -%}{%- continue -%}{%- endif -%}
+                {%- assign v_key = v_color | downcase -%}{%- if v_key != pref_trim -%}{%- continue -%}{%- endif -%}
+                {%- assign tok = v_key | append: ',' -%}
+                {%- unless chosen_colors contains tok -%}{%- assign found_variant = v -%}{%- assign found_color_label = v_color -%}{%- endunless -%}
+                {%- if found_variant -%}{%- break -%}{%- endif -%}
+              {%- endfor -%}
+              {%- if found_variant -%}
+                {%- assign chosen_colors = chosen_colors | append: found_color_label | downcase | append: ',' -%}
+
+                {%- assign media_primary = found_variant.featured_media | default: current_prod.featured_media -%}
+                {%- assign media_secondary = blank -%}
+                {%- if section.settings.show_secondary_image -%}
+                  {%- for m in current_prod.media -%}
+                    {%- if m.id != media_primary.id -%}{%- assign media_secondary = m -%}{%- break -%}{%- endif -%}
+                  {%- endfor -%}
+                {%- endif -%}
+
+                {%- assign loading_attr = 'eager' -%}
+                {%- case section.settings.image_ratio -%}
+                  {%- when 'square' -%}{%- assign pct_padding = 100 -%}
+                  {%- when 'portrait' -%}{%- assign pct_padding = 133.333 -%}
+                  {%- else -%}
+                    {%- if media_primary and media_primary.aspect_ratio -%}
+                      {%- assign pct_padding = 100 | divided_by: media_primary.aspect_ratio -%}
+                    {%- else -%}{%- assign pct_padding = 100 -%}{%- endif -%}
+                {%- endcase -%}
+
+                <li class="grid__item">
+                  <div class="card-wrapper variant-card">
+                    <a href="{% if coll != blank %}{{ current_prod.url | within: coll }}{% else %}{{ current_prod.url }}{% endif %}?variant={{ found_variant.id }}" class="full-unstyled-link">
+                      <div class="variant-card__media" style="--variant-aspect: {{ pct_padding }}%; --new-bg: {{ new_badge_bg }}; --new-color: {{ new_badge_color }}; --new-size: {{ new_badge_size }}; --new-top: {{ new_badge_top }}; --new-left: {{ new_badge_left }}; --new-weight: {{ new_badge_weight }}; --new-radius: {{ new_badge_radius }}; --new-padding: {{ new_badge_px }};">
+                        {%- if show_new_badge -%}<span class="mg-new-badge">{{ new_badge_text }}</span>{%- endif -%}
+                        {{ media_primary | image_url: width: 1066 | image_tag: alt: current_prod.title, loading: loading_attr, sizes: '(min-width: 990px) 25vw, 50vw', widths: '360,533,720,940,1066', class: 'variant-card__img variant-card__img--primary' }}
+                        {%- if section.settings.show_secondary_image and media_secondary -%}
+                          {{ media_secondary | image_url: width: 1066 | image_tag: alt: current_prod.title, loading: loading_attr, sizes: '(min-width: 990px) 25vw, 50vw', widths: '360,533,720,940,1066', class: 'variant-card__img variant-card__img--secondary' }}
+                        {%- endif -%}
+                      </div>
+                      <div class="card-information">
+                        <h3 class="card__heading h5">{{ current_prod.title }}</h3>
+                        <p class="caption-with-letter-spacing">{{ found_color_label }}</p>
+                        {%- render 'price', product: current_prod, price_class: 'price--listing', variant: found_variant -%}
+                        {% render 'mpi-installments-dawn', product: current_prod, installments: 12 %}
+                      </div>
+                    </a>
+                  </div>
+                </li>
+
+                {%- assign per_product_count = per_product_count | plus: 1 -%}
+              {%- endif -%}
+            {%- endfor -%}
+
+            {%- if current_only != true and per_product_count < current_want -%}
+              {%- for v in current_prod.variants -%}
+                {%- if per_product_count >= current_want -%}{%- break -%}{%- endif -%}
+                {%- if v.available != true -%}{%- continue -%}{%- endif -%}
+                {%- assign c = v.options[color_opt_index] | strip -%}{%- if c == '' -%}{%- continue -%}{%- endif -%}
+                {%- assign k = c | downcase -%}{%- assign t = k | append: ',' -%}{%- if chosen_colors contains t -%}{%- continue -%}{%- endif -%}
+
+                {%- assign media_primary = v.featured_media | default: current_prod.featured_media -%}
+                {%- assign media_secondary = blank -%}
+                {%- if section.settings.show_secondary_image -%}
+                  {%- for m in current_prod.media -%}
+                    {%- if m.id != media_primary.id -%}{%- assign media_secondary = m -%}{%- break -%}{%- endif -%}
+                  {%- endfor -%}
+                {%- endif -%}
+
+                {%- assign loading_attr = 'eager' -%}
+                {%- case section.settings.image_ratio -%}
+                  {%- when 'square' -%}{%- assign pct_padding = 100 -%}
+                  {%- when 'portrait' -%}{%- assign pct_padding = 133.333 -%}
+                  {%- else -%}
+                    {%- if media_primary and media_primary.aspect_ratio -%}
+                      {%- assign pct_padding = 100 | divided_by: media_primary.aspect_ratio -%}
+                    {%- else -%}{%- assign pct_padding = 100 -%}{%- endif -%}
+                {%- endcase -%}
+
+                <li class="grid__item">
+                  <div class="card-wrapper variant-card">
+                    <a href="{% if coll != blank %}{{ current_prod.url | within: coll }}{% else %}{{ current_prod.url }}{% endif %}?variant={{ v.id }}" class="full-unstyled-link">
+                      <div class="variant-card__media" style="--variant-aspect: {{ pct_padding }}%; --new-bg: {{ new_badge_bg }}; --new-color: {{ new_badge_color }}; --new-size: {{ new_badge_size }}; --new-top: {{ new_badge_top }}; --new-left: {{ new_badge_left }}; --new-weight: {{ new_badge_weight }}; --new-radius: {{ new_badge_radius }}; --new-padding: {{ new_badge_px }};">
+                        {%- if show_new_badge -%}<span class="mg-new-badge">{{ new_badge_text }}</span>{%- endif -%}
+                        {{ v.featured_media | default: current_prod.featured_media | image_url: width: 1066 | image_tag: alt: current_prod.title, loading: loading_attr, sizes: '(min-width: 990px) 25vw, 50vw', widths: '360,533,720,940,1066', class: 'variant-card__img variant-card__img--primary' }}
+                        {%- if section.settings.show_secondary_image and media_secondary -%}
+                          {{ media_secondary | image_url: width: 1066 | image_tag: alt: current_prod.title, loading: loading_attr, sizes: '(min-width: 990px) 25vw, 50vw', widths: '360,533,720,940,1066', class: 'variant-card__img variant-card__img--secondary' }}
+                        {%- endif -%}
+                      </div>
+                      <div class="card-information">
+                        <h3 class="card__heading h5">{{ current_prod.title }}</h3>
+                        <p class="caption-with-letter-spacing">{{ c }}</p>
+                        {%- render 'price', product: current_prod, price_class: 'price--listing', variant: v -%}
+                        {% render 'mpi-installments-dawn', product: current_prod, installments: 12 %}
+                      </div>
+                    </a>
+                  </div>
+                </li>
+
+                {%- assign per_product_count = per_product_count | plus: 1 -%}
+              {%- endfor -%}
+            {%- endif -%}
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+    </ul>
+
+    <div class="vc-wrap-{{ section.id }}">
+      <a href="{{ section.settings.vc_url | default: routes.all_products_collection_url }}" class="vc-btn-{{ section.id }}" aria-label="{{ section.settings.vc_label | default: 'Ver colección' }}">
+        {{ section.settings.vc_label | default: 'Ver colección' }}
+      </a>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Variantes 4/2/2",
+  "class": "section",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Título", "default": "El sillón perfecto para tu hogar" },
+
+    { "type": "header", "content": "Tipografía del título" },
+    { "type": "range", "id": "title_size_mobile", "label": "Tamaño título (móvil)", "min": 12, "max": 48, "step": 1, "unit": "px", "default": 24 },
+    { "type": "range", "id": "title_size_desktop", "label": "Tamaño título (desktop)", "min": 16, "max": 96, "step": 1, "unit": "px", "default": 40 },
+
+    { "type": "header", "content": "Productos" },
+    { "type": "product", "id": "product_1", "label": "Producto 1" },
+    { "type": "text", "id": "product_1_colors", "label": "Colores Producto 1 (coma)", "info": "Ej: gris, verde, camel, rosa" },
+    { "type": "checkbox", "id": "product_1_only", "label": "Mostrar sólo esos colores (P1)", "default": true },
+
+    { "type": "product", "id": "product_2", "label": "Producto 2" },
+    { "type": "text", "id": "product_2_colors", "label": "Colores Producto 2 (coma)", "info": "Ej: gris, verde ..." },
+    { "type": "checkbox", "id": "product_2_only", "label": "Mostrar sólo esos colores (P2)", "default": true },
+
+    { "type": "product", "id": "product_3", "label": "Producto 3" },
+    { "type": "text", "id": "product_3_colors", "label": "Colores Producto 3 (coma)", "info": "Ej: camel, rosa ..." },
+    { "type": "checkbox", "id": "product_3_only", "label": "Mostrar sólo esos colores (P3)", "default": true },
+
+    { "type": "header", "content": "Conteo por producto" },
+    { "type": "range", "id": "count_p1", "label": "Tarjetas de P1", "min": 0, "max": 12, "step": 1, "default": 4 },
+    { "type": "range", "id": "count_p2", "label": "Tarjetas de P2", "min": 0, "max": 12, "step": 1, "default": 2 },
+    { "type": "range", "id": "count_p3", "label": "Tarjetas de P3", "min": 0, "max": 12, "step": 1, "default": 2 },
+
+    { "type": "header", "content": "Fallback desde colección (opcional)" },
+    { "type": "collection", "id": "collection", "label": "Colección" },
+
+    { "type": "header", "content": "Color" },
+    { "type": "text", "id": "color_option_name", "label": "Nombre de la opción color", "default": "Color", "info": "Debe coincidir con el nombre exacto en tus productos." },
+    { "type": "text", "id": "color_order", "label": "Orden de colores global (coma)", "default": "negro, blanco, gris, beige, crema, lino, marrón, rojo, naranja, amarillo, verde, oliva, azul" },
+
+    { "type": "header", "content": "Imagen y grid" },
+    { "type": "select", "id": "image_ratio", "label": "Relación de aspecto", "default": "square",
+      "options": [
+        { "value": "adapt", "label": "Adaptar" },
+        { "value": "portrait", "label": "Retrato 3:4" },
+        { "value": "square", "label": "Cuadrado 1:1" }
+      ]
+    },
+    { "type": "select", "id": "image_shape", "label": "Forma de imagen", "default": "default",
+      "options": [
+        { "value": "default", "label": "Recta" },
+        { "value": "arch", "label": "Arco" },
+        { "value": "blob", "label": "Blob" },
+        { "value": "chevronleft", "label": "Chevrón izq." },
+        { "value": "chevronright", "label": "Chevrón der." },
+        { "value": "diamond", "label": "Diamante" },
+        { "value": "parallelogram", "label": "Paralelogramo" },
+        { "value": "round", "label": "Redonda" }
+      ]
+    },
+    { "type": "checkbox", "id": "show_secondary_image", "label": "Mostrar imagen secundaria al hover", "default": true },
+
+    { "type": "header", "content": "Grid" },
+    { "type": "range", "id": "columns_desktop", "label": "Columnas en desktop", "min": 1, "max": 6, "step": 1, "default": 4 },
+    { "type": "select", "id": "columns_mobile", "label": "Columnas en móvil", "default": "2", "options": [ { "value": "1", "label": "1" }, { "value": "2", "label": "2" } ] },
+
+    { "type": "header", "content": "Acciones" },
+    { "type": "select", "id": "quick_add", "label": "Compra rápida", "default": "none",
+      "options": [
+        { "value": "none", "label": "Ninguna" },
+        { "value": "standard", "label": "Estándar" },
+        { "value": "bulk", "label": "Al por mayor" }
+      ]
+    },
+
+    { "type": "header", "content": "Espaciado" },
+    { "type": "range", "id": "padding_top", "min": 0, "max": 100, "step": 4, "unit": "px", "label": "Padding superior", "default": 36 },
+    { "type": "range", "id": "padding_bottom", "min": 0, "max": 100, "step": 4, "unit": "px", "label": "Padding inferior", "default": 36 },
+
+    { "type": "header", "content": "Botón “Ver colección”" },
+    { "type": "text", "id": "vc_label", "label": "Texto del botón", "default": "Ver colección" },
+    { "type": "url",  "id": "vc_url", "label": "Enlace (opcional)", "info": "Dejar en blanco para usar /collections/all" },
+    { "type": "range", "id": "vc_margin_top", "label": "Margen superior (px)", "min": 0, "max": 80, "step": 2, "default": 36 },
+
+    { "type": "header", "content": "Separación card" },
+    { "type": "range", "id": "card_info_padding", "label": "Espacio entre imagen e información (px)", "min": 0, "max": 64, "step": 2, "default": 16 }
+  ],
+  "presets": [
+    { "name": "Variantes 4/2/2" }
+  ]
+}
+{% endschema %}
+
+<style>
+/* === FIX MOBILE DEFINITIVO (2 columnas) === */
+@media (max-width: 749px){ /* móvil puro */
+  .section-{{ section.id }}-padding .product-grid.grid--top,
+  .section-{{ section.id }}-padding .product-grid.grid--bottom{
+    display: grid !important;
+    grid-template-columns: repeat({{ section.settings.columns_mobile | default: 2 }}, minmax(0, 1fr)) !important;
+    column-gap: 16px !important;
+    row-gap: 20px !important;
+    justify-items: stretch !important;
+    align-items: stretch !important;
+  }
+  /* anula estilos del tema que fuerzan 1 columna */
+  .section-{{ section.id }}-padding .product-grid.grid--top > .grid__item,
+  .section-{{ section.id }}-padding .product-grid.grid--bottom > .grid__item{
+    width: auto !important;
+    max-width: none !important;
+    flex: 0 0 auto !important;
+    grid-column: auto / span 1 !important;
+    grid-row: auto / span 1 !important;
+  }
+}
+
+</style>
