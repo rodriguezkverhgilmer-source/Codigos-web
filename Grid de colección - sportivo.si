@@ -1,0 +1,225 @@
+{% comment %}
+  Section: Collection Grid (2-2-3) for Minimog 5.3.0
+  - Desktop: 2 filas de 2 (grandes) + 1 fila de 3 (pequeñas)
+  - Mobile: carrusel horizontal con tarjetas tamaño uniforme
+  - Overlay negro con opacidad regulable, título centrado en mayúsculas
+  - Controles de alineación/anchos para empatar con otras secciones
+{% endcomment %}
+
+{%- assign wrapper_class = section.settings.container_type -%}
+{%- if wrapper_class == 'full' -%}{% assign wrapper_class = '' %}{%- endif -%}
+
+<section id="m-collections-{{ section.id }}" class="m-collections-grid section">
+  <div class="{{ wrapper_class }}">
+    <div class="m-collections-grid__inner">
+      {% if section.settings.heading != blank %}
+        <div class="m-collections-grid__header">
+          <h2 class="m-collections-grid__title">{{ section.settings.heading }}</h2>
+          {% if section.settings.subheading != blank %}
+            <p class="m-collections-grid__subtitle">{{ section.settings.subheading }}</p>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {%- assign radius = section.settings.radius | default: 10 -%}
+      {%- assign gap = section.settings.gap | default: 16 -%}
+
+      <!-- Desktop/Tablet grid -->
+      <div class="m-collections-grid__rows">
+        <!-- Row 1: 1–2 -->
+        <div class="m-collections-grid__row m-collections-grid__row--2">
+          {%- for block in section.blocks -%}
+            {%- if forloop.index <= 2 -%}
+              {%- render 'm-collection-grid-card', block: block, radius: radius, size: 'big' -%}
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+
+        <!-- Row 2: 3–4 -->
+        <div class="m-collections-grid__row m-collections-grid__row--2">
+          {%- for block in section.blocks -%}
+            {%- if forloop.index >= 3 and forloop.index <= 4 -%}
+              {%- render 'm-collection-grid-card', block: block, radius: radius, size: 'big' -%}
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+
+        <!-- Row 3: 5–7 -->
+        <div class="m-collections-grid__row m-collections-grid__row--3">
+          {%- for block in section.blocks -%}
+            {%- if forloop.index >= 5 and forloop.index <= 7 -%}
+              {%- render 'm-collection-grid-card', block: block, radius: radius, size: 'small' -%}
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+      </div>
+
+      <!-- Mobile scroller -->
+      <div class="m-collections-grid__mobile" aria-label="Colecciones">
+        <div class="m-collections-grid__track">
+          {%- for block in section.blocks -%}
+            {%- render 'm-collection-grid-card',
+              block: block,
+              radius: radius,
+              size: 'small',
+              extra_class: 'm-cg-card--mobile'
+            -%}
+          {%- endfor -%}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #m-collections-{{ section.id }} {
+      --m-cg-ov: {{ section.settings.overlay_opacity | divided_by: 100.0 }};
+      --m-cg-gap: {{ section.settings.gap }}px;
+      --m-cg-mobile-w: {{ section.settings.mobile_card_w }}px;
+      --m-cg-mobile-h: {{ section.settings.mobile_card_h }}px;
+      --m-cg-side-pad: {{ section.settings.side_pad }}px;
+      padding-top: {{ section.settings.pt }}px;
+      padding-bottom: {{ section.settings.pb }}px;
+    }
+
+    /* Inner width control (para alinear con otras secciones) */
+    #m-collections-{{ section.id }} .m-collections-grid__inner {
+      {% if section.settings.container_type == 'full' %}
+        padding-left: var(--m-cg-side-pad);
+        padding-right: var(--m-cg-side-pad);
+      {% endif %}
+      {% if section.settings.content_max_width > 0 %}
+        max-width: {{ section.settings.content_max_width }}px;
+        margin-left: auto;
+        margin-right: auto;
+      {% endif %}
+    }
+
+    /* Header */
+    #m-collections-{{ section.id }} .m-collections-grid__header { text-align: {{ section.settings.text_align }}; margin-bottom: 20px; }
+    #m-collections-{{ section.id }} .m-collections-grid__title { font-size: 28px; line-height: 34px; margin: 0 0 6px 0; }
+    #m-collections-{{ section.id }} .m-collections-grid__subtitle { font-size: 14px; line-height: 20px; margin: 0; opacity: 0.8; }
+
+    /* Desktop/Tablet grid */
+    #m-collections-{{ section.id }} .m-collections-grid__rows { display: grid; gap: var(--m-cg-gap); }
+    #m-collections-{{ section.id }} .m-collections-grid__row { display: grid; gap: var(--m-cg-gap); }
+    #m-collections-{{ section.id }} .m-collections-grid__row--2 { grid-template-columns: 1fr 1fr; }
+    #m-collections-{{ section.id }} .m-collections-grid__row--3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    /* Card base */
+    #m-collections-{{ section.id }} .m-cg-card { position: relative; border-radius: {{ section.settings.radius }}px; overflow: hidden; background: #f4f4f4; transition: transform 180ms ease-out; }
+    #m-collections-{{ section.id }} .m-cg-card:hover { transform: translateY(-2px); }
+    #m-collections-{{ section.id }} .m-cg-link { display: block; width: 100%; height: 100%; text-decoration: none; color: inherit; }
+    #m-collections-{{ section.id }} .m-cg-media { width: 100%; height: 100%; position: relative; overflow: hidden; }
+    #m-collections-{{ section.id }} .m-cg-img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1); transition: transform 280ms ease-out; }
+    #m-collections-{{ section.id }} .m-cg-card:hover .m-cg-img { transform: scale(1.03); }
+
+    /* Overlay + título */
+    #m-collections-{{ section.id }} .m-cg-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 10px 12px; background: rgba(0,0,0,var(--m-cg-ov)); color: #fff; text-align: center; }
+    #m-collections-{{ section.id }} .m-cg-title { margin: 0; font-size: 22px; line-height: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; }
+
+    /* Alturas desktop/tablet */
+    #m-collections-{{ section.id }} .m-cg-card--big { height: {{ section.settings.big_height }}px; }
+    #m-collections-{{ section.id }} .m-cg-card--small { height: {{ section.settings.small_height }}px; }
+
+    /* Mobile scroller (oculto por defecto) */
+    #m-collections-{{ section.id }} .m-collections-grid__mobile { display: none; }
+
+    @media (max-width: 991px) {
+      #m-collections-{{ section.id }} .m-collections-grid__row--3 { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 599px) {
+      /* Ocultar grid; mostrar carrusel */
+      #m-collections-{{ section.id }} .m-collections-grid__rows { display: none; }
+      #m-collections-{{ section.id }} .m-collections-grid__mobile { display: block; }
+
+      #m-collections-{{ section.id }} .m-collections-grid__track {
+        display: flex; gap: var(--m-cg-gap);
+        overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+        {% if section.settings.mobile_snap %}scroll-snap-type: x mandatory;{% endif %}
+        padding-bottom: 6px;
+      }
+
+      #m-collections-{{ section.id }} .m-cg-card--mobile {
+        flex: 0 0 var(--m-cg-mobile-w);
+        width: var(--m-cg-mobile-w);
+        height: var(--m-cg-mobile-h);
+        scroll-snap-align: start;
+      }
+
+      #m-collections-{{ section.id }} .m-cg-card--mobile .m-cg-title { font-size: 18px; line-height: 22px; }
+    }
+
+    /* Scrollbar estética */
+    #m-collections-{{ section.id }} .m-collections-grid__track::-webkit-scrollbar { height: 6px; }
+    #m-collections-{{ section.id }} .m-collections-grid__track::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
+    #m-collections-{{ section.id }} .m-collections-grid__track::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</section>
+
+{% schema %}
+{
+  "name": "Colecciones 2-2-3",
+  "tag": "section",
+  "class": "section m-collections-grid-section",
+  "max_blocks": 7,
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Título", "default": "Compra por colección" },
+    { "type": "text", "id": "subheading", "label": "Subtítulo", "default": "Descubre nuestras colecciones" },
+
+    { "type": "select", "id": "container_type", "label": "Ancho de sección (desktop)", "default": "container",
+      "options": [
+        { "value": "container", "label": "Container (estándar)" },
+        { "value": "container-fluid", "label": "Container Fluid (más ancho)" },
+        { "value": "full", "label": "Full-width (de borde a borde)" }
+      ]
+    },
+    { "type": "range", "id": "content_max_width", "label": "Max width interno (px, 0 = auto)", "min": 0, "max": 1920, "step": 20, "default": 0 },
+    { "type": "range", "id": "side_pad", "label": "Padding lateral desktop (px)", "min": 0, "max": 80, "step": 2, "default": 0 },
+
+    { "type": "range", "id": "pt", "label": "Padding superior (px)", "min": 0, "max": 120, "step": 2, "default": 40 },
+    { "type": "range", "id": "pb", "label": "Padding inferior (px)", "min": 0, "max": 120, "step": 2, "default": 40 },
+
+    { "type": "select", "id": "text_align", "label": "Alineación texto", "default": "left",
+      "options": [
+        { "value": "left", "label": "Izquierda" },
+        { "value": "center", "label": "Centro" },
+        { "value": "right", "label": "Derecha" }
+      ]
+    },
+
+    { "type": "range", "id": "big_height", "label": "Alto tarjetas grandes (px)", "min": 160, "max": 420, "step": 10, "default": 280 },
+    { "type": "range", "id": "small_height", "label": "Alto tarjetas pequeñas (px)", "min": 120, "max": 320, "step": 10, "default": 200 },
+    { "type": "range", "id": "radius", "label": "Radio bordes (px)", "min": 0, "max": 30, "step": 1, "default": 10 },
+    { "type": "range", "id": "gap", "label": "Separación entre tarjetas (px)", "min": 8, "max": 32, "step": 2, "default": 16 },
+    { "type": "range", "id": "overlay_opacity", "label": "Opacidad overlay (%)", "min": 0, "max": 100, "step": 1, "default": 45 },
+
+    { "type": "range", "id": "mobile_card_w", "label": "Ancho tarjeta móvil (px)", "min": 140, "max": 320, "step": 4, "default": 220 },
+    { "type": "range", "id": "mobile_card_h", "label": "Alto tarjeta móvil (px)", "min": 120, "max": 280, "step": 4, "default": 180 },
+    { "type": "checkbox", "id": "mobile_snap", "label": "Ajuste por snap al deslizar", "default": true }
+  ],
+  "blocks": [
+    {
+      "type": "collection",
+      "name": "Colección",
+      "settings": [
+        { "type": "collection", "id": "collection", "label": "Colección" },
+        { "type": "image_picker", "id": "custom_image", "label": "Imagen personalizada (opcional)" },
+        { "type": "checkbox", "id": "show_title", "label": "Mostrar título sobre la imagen", "default": true },
+        { "type": "text", "id": "title_override", "label": "Título alternativo (opcional)" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Colecciones 2-2-3",
+      "category": "Colecciones",
+      "blocks": [
+        { "type": "collection" }, { "type": "collection" }, { "type": "collection" },
+        { "type": "collection" }, { "type": "collection" }, { "type": "collection" },
+        { "type": "collection" }
+      ]
+    }
+  ]
+}
+{% endschema %}
