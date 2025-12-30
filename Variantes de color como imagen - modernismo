@@ -1,0 +1,361 @@
+Crear el snippet de miniatura vertical (sin recorte)
+
+Ruta: snippets/option-value-image-portrait.liquid
+
+
+{%- comment -%}
+Miniatura VERTICAL contenida (sin recorte) para valores de opción.
+Ajusta WIDTH/HEIGHT si quieres otro tamaño.
+{%- endcomment -%}
+
+{%- assign WIDTH  = 90  -%}
+{%- assign HEIGHT = 120 -%}
+{%- assign RADIUS = 12  -%}
+{%- assign BORDER = 1   -%}  {# borde base 1px #}
+
+{%- assign id = param_name | append: '-' | append: option_value.id -%}
+{%- assign media = option_value.variant.featured_media | default: option_value.product.featured_media -%}
+{%- if media != blank -%}
+  {%- assign img_url = media | image_url: width: 600 -%}
+{%- endif -%}
+
+{%- capture label_style -%}
+  width: {{ WIDTH }}px;
+  height: {{ HEIGHT }}px;
+  max-width: {{ WIDTH }}px;
+  max-height: {{ HEIGHT }}px;
+  border-radius: {{ RADIUS }}px;
+  border: {{ BORDER }}px solid rgba(0,0,0,0.12);
+  background: #fff;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: top;
+  cursor: pointer;
+  transition: box-shadow 120ms linear, border-color 120ms linear, transform 120ms ease;
+{%- endcapture -%}
+
+{%- capture img_style -%}
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+{%- endcapture -%}
+
+<div class="option-value option-value--thumbnail" data-option-position="{{ option_position }}" style="display:inline-block;margin:0;">
+  <input
+    class="sr-only"
+    form="{{ form }}"
+    type="radio"
+    id="{{ id }}"
+    name="{{ param_name }}"
+    value="{{ option_value.id }}"
+    data-option-position="{{ option_position }}"
+    {% if option_value.product_url != blank %}data-product-url="{{ option_value.product_url | escape }}"{% endif %}
+    {% if option_value.selected %}checked{% endif %}
+    {% unless option_value.available %}disabled{% endunless %}
+  >
+  <label for="{{ id }}" class="option-value__inner" style="{{ label_style | strip }}" title="{{ option_value.name | escape }}">
+    {%- if img_url -%}
+      <img src="{{ img_url }}" alt="{{ option_value.name | escape }}" style="{{ img_style | strip }}">
+    {%- else -%}
+      <span style="font-size:12px;color:#777;">Sin imagen</span>
+    {%- endif -%}
+  </label>
+</div>
+
+
+
+
+Reemplazar el variant-picker (completo)
+
+Ruta: snippets/variant-picker.liquid
+
+
+{%- comment -%}
+----------------------------------------------------------------------------------------------------------------------
+VARIANT PICKER
+----------------------------------------------------------------------------------------------------------------------
+Render the variant picker option selectors.
+Supported variables:
+* product, form_id, update_url, hide_sold_out_variants, hide_size_chart, force_dropdown_as_block, block
+{%- endcomment -%}
+
+{%- assign color_label_list = 'general.label.color' | t | replace: ', ', ',' | downcase | split: ',' -%}
+{%- assign size_label_list  = 'general.label.size'  | t | replace: ', ', ',' | downcase | split: ',' -%}
+{%- assign variant_image_options = block.settings.variant_image_options | replace: ', ', ',' | downcase | split: ',' -%}
+
+/* -------- Determinar la posición de la opción "Color" (1-based) -------- */
+{%- assign color_position = 0 -%}
+{%- for opt in product.options -%}
+  {%- assign _d = opt | downcase -%}
+  {%- if color_label_list contains _d -%}{%- assign color_position = forloop.index -%}{%- break -%}{%- endif -%}
+{%- endfor -%}
+
+{%- unless product.has_only_default_variant -%}
+  <variant-picker
+    class="variant-picker"
+    section-id="{{ section.id }}"
+    handle="{{ product.handle }}"
+    form-id="{{ form_id }}"
+    {% if update_url %}update-url{% endif %}
+    {% if color_position > 0 %}data-color-position="{{ color_position }}"{% endif %}
+  >
+    {%- comment -%} JSON variante seleccionada (nativo del tema) {%- endcomment -%}
+    <script data-variant type="application/json">
+      {{- product.selected_or_first_available_variant | json -}}
+    </script>
+
+    {%- comment -%} JSON de todas las variantes (para filtrar por color en la galería) {%- endcomment -%}
+    <script id="vp-variants-{{ section.id }}" type="application/json">
+      {{- product.variants | json -}}
+    </script>
+
+    {%- for option in product.options_with_values -%}
+      {%- assign option_downcase = option.name | downcase -%}
+
+      {%- comment -%} Resolver estilo del selector {%- endcomment -%}
+      {%- assign resolved_option_selector_style = block.settings.selector_style -%}
+      {%- assign swatch_count = option.values | map: 'swatch' | compact | size -%}
+
+      {%- if swatch_count > 0 and block.settings.swatch_selector_style != 'none' -%}
+        {%- assign resolved_option_selector_style = block.settings.swatch_selector_style -%}
+      {%- endif -%}
+
+      {%- if swatch_count == 0 and color_label_list contains option_downcase and block.settings.swatch_selector_style != 'none' -%}
+        {%- assign resolved_option_selector_style = block.settings.swatch_selector_style -%}
+      {%- endif -%}
+
+      {%- if resolved_option_selector_style == 'dropdown' and force_dropdown_as_block -%}
+        {%- assign resolved_option_selector_style = 'block' -%}
+      {%- endif -%}
+
+      {%- if variant_image_options contains option_downcase -%}
+        {%- assign resolved_option_selector_style = 'variant_image' -%}
+      {%- endif -%}
+
+      {%- comment -%} Forzar imagen de variante si la opción es Color {%- endcomment -%}
+      {%- assign is_color_option = false -%}
+      {%- if color_label_list contains option_downcase -%}
+        {%- assign is_color_option = true -%}
+        {%- assign resolved_option_selector_style = 'variant_image' -%}
+      {%- endif -%}
+
+      <fieldset class="variant-picker__option">
+        <div class="variant-picker__option-info">
+          <div class="h-stack gap-2">
+            <legend class="text-subdued">{{ option.name }}:</legend>
+            <span>{{ option.selected_value }}</span>
+          </div>
+
+          {%- if hide_size_chart != true and block.settings.size_chart_page != blank and size_label_list contains option_downcase -%}
+            {%- capture drawer_id -%}size-chart-{{ option.position }}-{{ form_id }}{%- endcapture -%}
+            <button type="button" class="text-sm text-subdued" aria-controls="{{ drawer_id | escape }}" aria-expanded="false">
+              <span class="link">{{ 'product.general.size_chart' | t }}</span>
+            </button>
+            <x-drawer id="{{ drawer_id }}" class="drawer drawer--lg">
+              <span class="h5" slot="header">{{ block.settings.size_chart_page.title }}</span>
+              <div class="prose">
+                {{- block.settings.size_chart_page.content -}}
+              </div>
+            </x-drawer>
+          {%- endif -%}
+        </div>
+
+        {%- if resolved_option_selector_style == 'dropdown' -%}
+          {%- capture popover_id -%}popover-variant-picker-{{ section.id }}-{{ product.id }}-{{ option.position }}{%- endcapture -%}
+          <div class="relative">
+            <button type="button" class="select" aria-controls="{{ popover_id }}" aria-expanded="false">
+              <span id="{{ popover_id }}-selected-value">{{- option.selected_value -}}</span>
+              {%- render 'icon' with 'chevron-bottom', class: 'select-chevron' -%}
+            </button>
+
+            <x-popover id="{{ popover_id }}" class="popover" initial-focus="[aria-selected='true']" close-on-listbox-select anchor-horizontal="start" anchor-vertical="end">
+              <p class="h5" slot="title">{{ option.name }}</p>
+              {%- assign param_name = form_id | append: '-option' | append: option.position -%}
+              <div data-option-selector class="popover-listbox">
+                {%- for option_value in option.values -%}
+                  {%- if hide_sold_out_variants == false or option_value.available or option_value.selected -%}
+                    {%- if update_url and option_value.product_url != blank -%}
+                      {%- if option_value.selected -%}
+                        <input class="sr-only" type="radio" id="{{ param_name }}-{{ option_value.id }}" form="{{ form_id }}" name="{{ param_name }}" data-option-position="{{ option.position }}" value="{{ option_value.id }}" checked>
+                      {%- endif -%}
+                      <a href="{{ option_value.variant.url | default: option_value.product_url }}" class="popover-listbox__option {% unless option_value.available %}is-disabled{% endunless %}">{{- option_value.name -}}</a>
+                    {%- else -%}
+                      <label class="popover-listbox__option {% unless option_value.available %}is-disabled{% endunless %}" for="{{ param_name }}-{{ option_value.id }}">
+                        <input class="sr-only" form="{{ form_id }}" type="radio" id="{{ param_name }}-{{ option_value.id }}" name="{{ param_name }}" {% if option_value.product_url != blank %}data-product-url="{{ option_value.product_url | escape }}"{% endif %} data-option-position="{{ option.position }}" value="{{ option_value.id }}" {% if option_value.selected %}checked{% endif %}>
+                        {{- option_value.name -}}
+                      </label>
+                    {%- endif -%}
+                  {%- endif -%}
+                {%- endfor -%}
+              </div>
+            </x-popover>
+          </div>
+        {%- else -%}
+          <div {% unless block.settings.stack_blocks %}class="scroll-area bleed sm:unbleed"{% endunless %}>
+            <div class="variant-picker__option-values {% if block.settings.stack_blocks %}wrap{% else %}scroll-area bleed sm:unbleed{% endif %} {% if is_color_option %}variant-picker__option-values--color gap-4{% elsif resolved_option_selector_style == 'swatch' and settings.color_swatch_style == 'rectangle' %}variant-picker__option-values--color gap-4{% else %}gap-2{% endif %}">
+              {%- assign name = form_id | append: '-option' | append: option.position -%}
+              {%- for option_value in option.values -%}
+                {%- case resolved_option_selector_style -%}
+                  {%- when 'variant_image' -%}
+                    {%- if is_color_option -%}
+                      {%- render 'option-value-image-portrait',
+                        form: form_id,
+                        option_value: option_value,
+                        param_name: name,
+                        option_position: option.position
+                      -%}
+                    {%- else -%}
+                      {%- render 'option-value',
+                        type: 'thumbnail',
+                        form: form_id,
+                        option_value: option_value,
+                        param_name: name,
+                        option_position: option.position,
+                        hide_if_disabled: hide_sold_out_variants,
+                        reload_page_for_combined_products: update_url,
+                        id_prefix: forloop.index,
+                        bordered: true
+                      -%}
+                    {%- endif -%}
+                  {%- when 'swatch' -%}
+                    {%- render 'option-value',
+                      type: 'swatch',
+                      form: form_id,
+                      option_value: option_value,
+                      param_name: name,
+                      option_position: option.position,
+                      hide_if_disabled: hide_sold_out_variants,
+                      reload_page_for_combined_products: update_url,
+                      id_prefix: forloop.index
+                    -%}
+                  {%- when 'block' -%}
+                    {%- render 'option-value',
+                      type: 'block',
+                      form: form_id,
+                      option_value: option_value,
+                      param_name: name,
+                      option_position: option.position,
+                      hide_if_disabled: hide_sold_out_variants,
+                      reload_page_for_combined_products: update_url,
+                      id_prefix: forloop.index
+                    -%}
+                  {%- when 'block_swatch' -%}
+                    {%- render 'option-value',
+                      type: 'block',
+                      form: form_id,
+                      option_value: option_value,
+                      param_name: name,
+                      option_position: option.position,
+                      show_swatch: true,
+                      hide_if_disabled: hide_sold_out_variants,
+                      reload_page_for_combined_products: update_url,
+                      id_prefix: forloop.index
+                    -%}
+                {%- endcase -%}
+              {%- endfor -%}
+            </div>
+          </div>
+        {%- endif -%}
+      </fieldset>
+    {%- endfor -%}
+  </variant-picker>
+
+  {%- comment -%} ---------- FILTRO DE GALERÍA POR COLOR SELECCIONADO ---------- {%- endcomment -%}
+  <script>
+  (function(){
+    try{
+      var sectionId = "{{ section.id }}";
+      var picker = document.querySelector('#shopify-section-' + sectionId + ' variant-picker');
+      if(!picker) return;
+
+      var colorPos = parseInt(picker.getAttribute('data-color-position') || '0', 10);
+      if(!colorPos){ return; } // no hay opción Color
+
+      var variantsEl = document.getElementById('vp-variants-' + sectionId);
+      if(!variantsEl) return;
+      var variants = JSON.parse(variantsEl.textContent || '[]');
+
+      function getSelectedVariantId(){
+        var formId = picker.getAttribute('form-id');
+        if(!formId) return null;
+        var idInput = document.querySelector('#' + formId + ' input[name="id"]');
+        return idInput ? idInput.value : null;
+      }
+
+      function selectedColor(){
+        var vid = getSelectedVariantId();
+        if(!vid) return null;
+        var v = variants.find(function(x){ return String(x.id) === String(vid); });
+        return v ? v.options[colorPos - 1] : null;
+      }
+
+      function idsForColor(color){
+        return variants
+          .filter(function(v){ return v.options[colorPos - 1] === color; })
+          .map(function(v){ return String(v.id); });
+      }
+
+      function parseVariantIdsAttr(el){
+        // cubrir distintos atributos posibles
+        var attrs = ['data-variant-ids','data-media-variant-ids','data-variants','data-variantids'];
+        for(var i=0;i<attrs.length;i++){
+          var val = el.getAttribute(attrs[i]);
+          if(val){ return val.split(',').map(function(x){ return x.trim(); }).filter(Boolean); }
+        }
+        return [];
+      }
+
+      function filterGallery(){
+        var color = selectedColor();
+        if(!color) return;
+
+        var idsSet = idsForColor(color);
+        var idsHash = {};
+        idsSet.forEach(function(id){ idsHash[id]=true; });
+
+        var gallery = document.querySelector('#shopify-section-' + sectionId + ' .product-gallery__media-list');
+        if(!gallery) return;
+
+        var items = Array.prototype.slice.call(gallery.children);
+        items.forEach(function(item){
+          var matchIds = parseVariantIdsAttr(item);
+          if(matchIds.length === 0){
+            // sin asignación a variante -> ocultamos para cumplir "solo fotos del color"
+            item.hidden = true;
+            item.style.display = 'none';
+            return;
+          }
+          var intersects = matchIds.some(function(mid){ return idsHash[String(mid)] === true; });
+          if(intersects){
+            item.hidden = false;
+            item.style.display = '';
+          }else{
+            item.hidden = true;
+            item.style.display = 'none';
+          }
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', filterGallery);
+      picker.addEventListener('change', filterGallery);
+
+      var formId = picker.getAttribute('form-id');
+      var idInput = formId ? document.querySelector('#' + formId + ' input[name="id"]') : null;
+      if(idInput){
+        var mo = new MutationObserver(filterGallery);
+        mo.observe(idInput, { attributes:true, attributeFilter:['value'] });
+        idInput.addEventListener('change', filterGallery);
+      }
+
+      document.addEventListener('product:rerender', filterGallery);
+    }catch(err){ console.warn('gallery filter error', err); }
+  })();
+  </script>
+{%- endunless -%}
+
